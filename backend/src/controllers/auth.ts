@@ -59,3 +59,67 @@ export async function completeCandidateSignup(req: Request, res: Response) {
     });
   }
 }
+/**
+ * Called right after an employer signs up with email+password.
+ * Creates their profiles row + employers row with approval_status "pending".
+ * They cannot use the dashboard until Admin approves them.
+ */
+export async function completeEmployerSignup(req: Request, res: Response) {
+  try {
+    const userId = req.authUserId!;
+    const email = req.authUserEmail ?? "";
+    const { company_name, contact_person, phone } = req.body;
+
+    const { data: existingProfile, error: lookupError } = await supabase
+      .from("profiles")
+      .select("id, role, full_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (lookupError) throw lookupError;
+
+    if (existingProfile) {
+      const { data: employer } = await supabase
+        .from("employers")
+        .select("approval_status, status")
+        .eq("id", userId)
+        .single();
+
+      return res.json({
+        success: true,
+        isNewProfile: false,
+        profile: existingProfile,
+        approvalStatus: employer?.approval_status ?? "pending",
+      });
+    }
+
+    const { data: newProfile, error: profileError } = await supabase
+      .from("profiles")
+      .insert({ id: userId, role: "employer" })
+      .select()
+      .single();
+
+    if (profileError) throw profileError;
+
+    const { error: employerError } = await supabase.from("employers").insert({
+      id: userId,
+      email,
+      company_name: company_name ?? null,
+      contact_person: contact_person ?? null,
+      phone: phone ?? null,
+      approval_status: "pending",
+      status: "inactive",
+    });
+
+    if (employerError) throw employerError;
+
+    return res.json({
+      success: true,
+      isNewProfile: true,
+      profile: newProfile,
+      approvalStatus: "pending",
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+}

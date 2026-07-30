@@ -37,6 +37,7 @@ import { Route as ServicesDocumentationRouteImport } from './routes/Services/Doc
 import { Route as ServicesDoctorsRouteImport } from './routes/Services/Doctors'
 import { Route as EmployerSettingsRouteImport } from './routes/Employer/settings'
 import { Route as EmployerRegisterRouteImport } from './routes/Employer/register'
+import { Route as EmployerPendingApprovalRouteImport } from './routes/Employer/pending-approval'
 import { Route as EmployerNotificationsRouteImport } from './routes/Employer/notifications'
 import { Route as EmployerJobOrdersRouteImport } from './routes/Employer/job-orders'
 import { Route as EmployerInterviewsRouteImport } from './routes/Employer/interviews'
@@ -221,6 +222,11 @@ const EmployerSettingsRoute = EmployerSettingsRouteImport.update({
 const EmployerRegisterRoute = EmployerRegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => EmployerRouteRoute,
+} as any)
+const EmployerPendingApprovalRoute = EmployerPendingApprovalRouteImport.update({
+  id: '/pending-approval',
+  path: '/pending-approval',
   getParentRoute: () => EmployerRouteRoute,
 } as any)
 const EmployerNotificationsRoute = EmployerNotificationsRouteImport.update({
@@ -486,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/Employer/interviews': typeof EmployerInterviewsRouteWithChildren
   '/Employer/job-orders': typeof EmployerJobOrdersRouteWithChildren
   '/Employer/notifications': typeof EmployerNotificationsRoute
+  '/Employer/pending-approval': typeof EmployerPendingApprovalRoute
   '/Employer/register': typeof EmployerRegisterRoute
   '/Employer/settings': typeof EmployerSettingsRoute
   '/Services/Doctors': typeof ServicesDoctorsRoute
@@ -560,6 +567,7 @@ export interface FileRoutesByTo {
   '/Employer/interviews': typeof EmployerInterviewsRouteWithChildren
   '/Employer/job-orders': typeof EmployerJobOrdersRouteWithChildren
   '/Employer/notifications': typeof EmployerNotificationsRoute
+  '/Employer/pending-approval': typeof EmployerPendingApprovalRoute
   '/Employer/register': typeof EmployerRegisterRoute
   '/Employer/settings': typeof EmployerSettingsRoute
   '/Services/Doctors': typeof ServicesDoctorsRoute
@@ -635,6 +643,7 @@ export interface FileRoutesById {
   '/Employer/interviews': typeof EmployerInterviewsRouteWithChildren
   '/Employer/job-orders': typeof EmployerJobOrdersRouteWithChildren
   '/Employer/notifications': typeof EmployerNotificationsRoute
+  '/Employer/pending-approval': typeof EmployerPendingApprovalRoute
   '/Employer/register': typeof EmployerRegisterRoute
   '/Employer/settings': typeof EmployerSettingsRoute
   '/Services/Doctors': typeof ServicesDoctorsRoute
@@ -711,6 +720,7 @@ export interface FileRouteTypes {
     | '/Employer/interviews'
     | '/Employer/job-orders'
     | '/Employer/notifications'
+    | '/Employer/pending-approval'
     | '/Employer/register'
     | '/Employer/settings'
     | '/Services/Doctors'
@@ -785,6 +795,7 @@ export interface FileRouteTypes {
     | '/Employer/interviews'
     | '/Employer/job-orders'
     | '/Employer/notifications'
+    | '/Employer/pending-approval'
     | '/Employer/register'
     | '/Employer/settings'
     | '/Services/Doctors'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/Employer/interviews'
     | '/Employer/job-orders'
     | '/Employer/notifications'
+    | '/Employer/pending-approval'
     | '/Employer/register'
     | '/Employer/settings'
     | '/Services/Doctors'
@@ -1126,6 +1138,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/Employer/register'
       preLoaderRoute: typeof EmployerRegisterRouteImport
+      parentRoute: typeof EmployerRouteRoute
+    }
+    '/Employer/pending-approval': {
+      id: '/Employer/pending-approval'
+      path: '/pending-approval'
+      fullPath: '/Employer/pending-approval'
+      preLoaderRoute: typeof EmployerPendingApprovalRouteImport
       parentRoute: typeof EmployerRouteRoute
     }
     '/Employer/notifications': {
@@ -1551,6 +1570,7 @@ interface EmployerRouteRouteChildren {
   EmployerInterviewsRoute: typeof EmployerInterviewsRouteWithChildren
   EmployerJobOrdersRoute: typeof EmployerJobOrdersRouteWithChildren
   EmployerNotificationsRoute: typeof EmployerNotificationsRoute
+  EmployerPendingApprovalRoute: typeof EmployerPendingApprovalRoute
   EmployerRegisterRoute: typeof EmployerRegisterRoute
   EmployerSettingsRoute: typeof EmployerSettingsRoute
 }
@@ -1563,6 +1583,7 @@ const EmployerRouteRouteChildren: EmployerRouteRouteChildren = {
   EmployerInterviewsRoute: EmployerInterviewsRouteWithChildren,
   EmployerJobOrdersRoute: EmployerJobOrdersRouteWithChildren,
   EmployerNotificationsRoute: EmployerNotificationsRoute,
+  EmployerPendingApprovalRoute: EmployerPendingApprovalRoute,
   EmployerRegisterRoute: EmployerRegisterRoute,
   EmployerSettingsRoute: EmployerSettingsRoute,
 }

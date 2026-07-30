@@ -1,16 +1,42 @@
 import axios from "axios";
+import { supabase } from "@/lib/supabase";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
-console.log("VITE_API_URL is:", import.meta.env.VITE_API_URL);
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard
-|--------------------------------------------------------------------------
-*/
+api.interceptors.request.use(async (config) => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  return config;
+});
+
+/* =========================================================
+   SIGNUP
+========================================================= */
+
+export interface CompleteEmployerSignupResponse {
+  success: boolean;
+  isNewProfile: boolean;
+  approvalStatus: "pending" | "approved";
+  profile: { id: string; role: string; full_name: string | null };
+}
+
+export async function completeEmployerSignup(payload: {
+  company_name: string;
+  contact_person: string;
+  phone: string;
+}): Promise<CompleteEmployerSignupResponse> {
+  const { data } = await api.post("/auth/complete-employer-signup", payload);
+  return data;
+}
 
 export async function getDashboard() {
   const response = await api.get("/employer/dashboard");

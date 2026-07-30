@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import * as EmployerService from "../services/employer";
 import { getEmployerCandidate, getEmployerCandidates } from "../services/employer/candidate";
 
-const DEMO_EMPLOYER_ID = "3d730a29-057f-4588-9c03-0df22e724c3a";
-
 /*
 |--------------------------------------------------------------------------
 | Dashboard
@@ -12,7 +10,7 @@ const DEMO_EMPLOYER_ID = "3d730a29-057f-4588-9c03-0df22e724c3a";
 
 export async function getDocuments(req: Request, res: Response) {
   try {
-    const data = await EmployerService.getEmployerDocuments(DEMO_EMPLOYER_ID);
+    const data = await EmployerService.getEmployerDocuments(req.employerId!);
 
     return res.json({
       success: true,
@@ -28,7 +26,7 @@ export async function getDocuments(req: Request, res: Response) {
 
 export async function getDashboard(req: Request, res: Response) {
   try {
-    const data = await EmployerService.getEmployerDashboard(DEMO_EMPLOYER_ID);
+    const data = await EmployerService.getEmployerDashboard(req.employerId!);
 
     return res.json({
       success: true,
@@ -50,7 +48,7 @@ export async function getDashboard(req: Request, res: Response) {
 
 export async function getProfile(req: Request, res: Response) {
   try {
-    const data = await EmployerService.getEmployerProfile(DEMO_EMPLOYER_ID);
+    const data = await EmployerService.getEmployerProfile(req.employerId!);
 
     return res.json({
       success: true,
@@ -66,7 +64,7 @@ export async function getProfile(req: Request, res: Response) {
 
 export async function updateProfile(req: Request, res: Response) {
   try {
-    const data = await EmployerService.updateEmployerProfile(DEMO_EMPLOYER_ID, req.body);
+    const data = await EmployerService.updateEmployerProfile(req.employerId!, req.body);
 
     return res.json({
       success: true,
@@ -89,7 +87,7 @@ export async function updateProfile(req: Request, res: Response) {
 export async function getRequirements(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerRequirements({
-      employerId: DEMO_EMPLOYER_ID,
+      employerId: req.employerId!,
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 10,
       status: req.query.status as string,
@@ -111,7 +109,7 @@ export async function getRequirements(req: Request, res: Response) {
 export async function getRequirement(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerRequirementDetails(
-      DEMO_EMPLOYER_ID,
+      req.employerId!,
       String(req.params.id),
     );
 
@@ -129,7 +127,7 @@ export async function getRequirement(req: Request, res: Response) {
 
 export async function createRequirement(req: Request, res: Response) {
   try {
-    const data = await EmployerService.createRequirement(DEMO_EMPLOYER_ID, req.body);
+    const data = await EmployerService.createRequirement(req.employerId!, req.body);
 
     return res.status(201).json({
       success: true,
@@ -146,7 +144,7 @@ export async function createRequirement(req: Request, res: Response) {
 export async function updateRequirement(req: Request, res: Response) {
   try {
     const data = await EmployerService.updateRequirement(
-      DEMO_EMPLOYER_ID,
+      req.employerId!,
       String(req.params.id),
       req.body,
     );
@@ -165,7 +163,7 @@ export async function updateRequirement(req: Request, res: Response) {
 
 export async function withdrawRequirement(req: Request, res: Response) {
   try {
-    const data = await EmployerService.withdrawRequirement(DEMO_EMPLOYER_ID, String(req.params.id));
+    const data = await EmployerService.withdrawRequirement(req.employerId!, String(req.params.id));
 
     return res.json({
       success: true,
@@ -188,7 +186,7 @@ export async function withdrawRequirement(req: Request, res: Response) {
 export async function getInterviews(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerInterviews({
-      employerId: DEMO_EMPLOYER_ID,
+      employerId: req.employerId!,
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20,
       status: req.query.status as string,
@@ -209,7 +207,7 @@ export async function getInterviews(req: Request, res: Response) {
 
 export async function confirmInterview(req: Request, res: Response) {
   try {
-    const data = await EmployerService.confirmInterview(DEMO_EMPLOYER_ID, String(req.params.id));
+    const data = await EmployerService.confirmInterview(req.employerId!, String(req.params.id));
 
     return res.json({
       success: true,
@@ -232,7 +230,7 @@ export async function confirmInterview(req: Request, res: Response) {
 export async function getDeployments(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerDeployments({
-      employerId: DEMO_EMPLOYER_ID,
+      employerId: req.employerId!,
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20,
       status: req.query.status as string,
@@ -254,7 +252,7 @@ export async function getDeployments(req: Request, res: Response) {
 export async function getDeployment(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerDeployment(
-      DEMO_EMPLOYER_ID,
+      req.employerId!,
       String(req.params.id),
     );
 
@@ -279,7 +277,7 @@ export async function getDeployment(req: Request, res: Response) {
 export async function getNotifications(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerNotifications({
-      employerId: DEMO_EMPLOYER_ID,
+      employerId: req.employerId!,
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20,
       unreadOnly: req.query.unreadOnly === "true",
@@ -299,10 +297,7 @@ export async function getNotifications(req: Request, res: Response) {
 
 export async function markNotificationRead(req: Request, res: Response) {
   try {
-    const data = await EmployerService.markNotificationRead(
-      DEMO_EMPLOYER_ID,
-      String(req.params.id),
-    );
+    const data = await EmployerService.markNotificationRead(req.employerId!, String(req.params.id));
 
     return res.json({
       success: true,
@@ -318,7 +313,7 @@ export async function markNotificationRead(req: Request, res: Response) {
 
 export async function markAllNotificationsRead(req: Request, res: Response) {
   try {
-    const data = await EmployerService.markAllNotificationsRead(DEMO_EMPLOYER_ID);
+    const data = await EmployerService.markAllNotificationsRead(req.employerId!);
 
     return res.json({
       success: true,
@@ -332,18 +327,19 @@ export async function markAllNotificationsRead(req: Request, res: Response) {
   }
 }
 export async function getCandidate(req: Request, res: Response) {
-  const data = await getEmployerCandidate(String(req.params.id));
-  res.json(data);
+  try {
+    const data = await getEmployerCandidate(req.employerId!, req.params.id);
+    res.json({ success: true, data });
+  } catch (err: any) {
+    return res.status(404).json({ success: false, message: err.message });
+  }
 }
 
 export async function getCandidates(req: Request, res: Response) {
   try {
-    const data = await getEmployerCandidates(DEMO_EMPLOYER_ID);
+    const data = await getEmployerCandidates(req.employerId!);
     return res.json({ success: true, data });
   } catch (err: any) {
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    return res.status(500).json({ success: false, message: err.message });
   }
 }
