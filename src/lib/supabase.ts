@@ -88,3 +88,21 @@ export async function sendCandidateLoginLink(email: string) {
   });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Sends a magic sign-in link to the given email for employer signup/login.
+ * Same shape as `sendCandidateLoginLink` — `shouldCreateUser: true` lets a
+ * brand-new employer contact sign up just by clicking the link, and
+ * `emailRedirectTo` brings them back to the employer login page, which then
+ * finishes the login/signup.
+ */
+export async function sendEmployerLoginLink(email: string) {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: `${window.location.origin}/employer`,
+    },
+  });
+  if (error) throw new Error(error.message);
+}

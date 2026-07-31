@@ -145,4 +145,25 @@ export async function markNotificationRead(id: string) {
 export async function getCandidates() {
   const { data } = await api.get("/employer/candidates");
   return data.data;
+} /*
+|--------------------------------------------------------------------------
+| Onboarding — Documents & Review
+|--------------------------------------------------------------------------
+*/
+
+export async function uploadCompanyDocument(file: File, documentType: string) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("document_type", documentType);
+
+  const { data } = await api.post("/employer/documents", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+  return data.data;
+}
+
+export async function submitForReview() {
+  const { data } = await api.post("/employer/submit-for-review");
+  return data.data;
 }
