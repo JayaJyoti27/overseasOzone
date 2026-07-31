@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import * as NotificationService from "../services/admin/notifications";
 
-// Temporary until authentication is added
-const USER_ID = "admin-demo";
+function currentUserId(req: Request): string {
+  return (req.adminId || req.employerId || req.candidateId)!;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +16,7 @@ export async function getNotifications(req: Request, res: Response) {
     const data = await NotificationService.getNotifications({
       page: Number(req.query.page) || 1,
       limit: Number(req.query.limit) || 20,
-      userId: USER_ID,
+      userId: currentUserId(req),
       isRead: req.query.isRead !== undefined ? req.query.isRead === "true" : undefined,
       type: req.query.type as string,
     });
@@ -114,7 +115,7 @@ export async function markAsRead(req: Request, res: Response) {
 
 export async function markAllAsRead(req: Request, res: Response) {
   try {
-    const data = await NotificationService.markAllAsRead(USER_ID);
+    const data = await NotificationService.markAllAsRead(currentUserId(req));
 
     res.json({
       success: true,
@@ -136,7 +137,7 @@ export async function markAllAsRead(req: Request, res: Response) {
 
 export async function getUnreadCount(req: Request, res: Response) {
   try {
-    const data = await NotificationService.getUnreadCount(USER_ID);
+    const data = await NotificationService.getUnreadCount(currentUserId(req));
 
     res.json({
       success: true,

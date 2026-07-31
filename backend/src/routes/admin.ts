@@ -5,6 +5,7 @@ import {
   getEmployers,
   getEmployer,
   getPendingEmployers,
+  getEmployerDocuments,
   approveEmployer,
   suspendEmployer,
   getRequirements,
@@ -28,6 +29,7 @@ import {
   activateCandidate,
   suspendCandidate,
 } from "../controllers/admin";
+import notificationRoutes from "./notifications";
 
 router.use(verifyAuth, requireRole("admin"));
 /*
@@ -52,6 +54,13 @@ router.patch("/candidates/:id/suspend", suspendCandidate);
 router.get("/dashboard", getDashboard);
 /*
 |--------------------------------------------------------------------------
+| Notifications
+|--------------------------------------------------------------------------
+*/
+
+router.use("/notifications", notificationRoutes);
+/*
+|--------------------------------------------------------------------------
 | Employer Management
 |--------------------------------------------------------------------------
 */
@@ -61,6 +70,8 @@ router.get("/employers", getEmployers);
 router.get("/employers/pending", getPendingEmployers);
 
 router.get("/employers/:id", getEmployer);
+
+router.get("/employers/:id/documents", getEmployerDocuments);
 
 router.patch("/employers/:id/approve", approveEmployer);
 

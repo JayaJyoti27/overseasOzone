@@ -30,13 +30,25 @@ function EmployerRegisterPage() {
 
     setSubmitting(true);
     try {
+      console.log("[EmployerRegister] step 1: updateProfile");
       await updateProfile({ company_name: companyName.trim() });
+
+      console.log("[EmployerRegister] step 2: uploadEmployerDocument");
       await uploadEmployerDocument(file, "company_verification");
+
+      console.log("[EmployerRegister] step 3: submitForReview");
       await submitForReview();
 
       navigate({ to: "/Employer/pending-approval" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Try again.");
+    } catch (err: any) {
+      // Axios's err.message is a generic "Request failed with status code 500"
+      // The real reason from the backend lives in err.response.data
+      console.error("[EmployerRegister] FULL ERROR:", err);
+      console.error("[EmployerRegister] response status:", err?.response?.status);
+      console.error("[EmployerRegister] response data:", err?.response?.data);
+
+      const backendMessage = err?.response?.data?.message;
+      setError(backendMessage || err?.message || "Something went wrong. Try again.");
     } finally {
       setSubmitting(false);
     }

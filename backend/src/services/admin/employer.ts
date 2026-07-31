@@ -102,6 +102,35 @@ export async function getEmployer(employerId: string) {
 
 /*
 |--------------------------------------------------------------------------
+| Employer Documents
+|--------------------------------------------------------------------------
+*/
+
+export async function getEmployerDocuments(employerId: string) {
+  const { data, error } = await supabase
+    .from("employer_documents")
+    .select(
+      `
+      id,
+      document_type,
+      file_name,
+      file_url,
+      status,
+      expiry_date,
+      uploaded_at,
+      updated_at
+    `,
+    )
+    .eq("employer_id", employerId)
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw new DatabaseError("Unable to fetch employer documents.", error);
+
+  return data ?? [];
+}
+
+/*
+|--------------------------------------------------------------------------
 | Pending Employers
 |--------------------------------------------------------------------------
 */

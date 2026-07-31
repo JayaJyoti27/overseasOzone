@@ -1,0 +1,455 @@
+diff --git a/backend/src/controllers/admin.ts b/backend/src/controllers/admin.ts
+index 77ee3ec..6dce6da 100644
+--- a/backend/src/controllers/admin.ts
++++ b/backend/src/controllers/admin.ts
+@@ -174,6 +174,28 @@ export async function getEmployer(req: Request, res: Response) {
+   }
+ }
+ 
++/*
++|--------------------------------------------------------------------------
++| Employer Documents
++|--------------------------------------------------------------------------
++*/
++
++export async function getEmployerDocuments(req: Request, res: Response) {
++  try {
++    const data = await AdminService.getEmployerDocuments(String(req.params.id));
++
++    return res.json({
++      success: true,
++      data,
++    });
++  } catch (err: any) {
++    return res.status(500).json({
++      success: false,
++      message: err.message,
++    });
++  }
++}
++
+ /*
+ |--------------------------------------------------------------------------
+ | Pending Employers
+diff --git a/backend/src/controllers/notifications.ts b/backend/src/controllers/notifications.ts
+index 96e6a2e..0809cb7 100644
+--- a/backend/src/controllers/notifications.ts
++++ b/backend/src/controllers/notifications.ts
+@@ -1,8 +1,9 @@
+ import { Request, Response } from "express";
+ import * as NotificationService from "../services/admin/notifications";
+ 
+-// Temporary until authentication is added
+-const USER_ID = "admin-demo";
++function currentUserId(req: Request): string {
++  return (req.adminId || req.employerId || req.candidateId)!;
++}
+ 
+ /*
+ |--------------------------------------------------------------------------
+@@ -15,7 +16,7 @@ export async function getNotifications(req: Request, res: Response) {
+     const data = await NotificationService.getNotifications({
+       page: Number(req.query.page) || 1,
+       limit: Number(req.query.limit) || 20,
+-      userId: USER_ID,
++      userId: currentUserId(req),
+       isRead: req.query.isRead !== undefined ? req.query.isRead === "true" : undefined,
+       type: req.query.type as string,
+     });
+@@ -114,7 +115,7 @@ export async function markAsRead(req: Request, res: Response) {
+ 
+ export async function markAllAsRead(req: Request, res: Response) {
+   try {
+-    const data = await NotificationService.markAllAsRead(USER_ID);
++    const data = await NotificationService.markAllAsRead(currentUserId(req));
+ 
+     res.json({
+       success: true,
+@@ -136,7 +137,7 @@ export async function markAllAsRead(req: Request, res: Response) {
+ 
+ export async function getUnreadCount(req: Request, res: Response) {
+   try {
+-    const data = await NotificationService.getUnreadCount(USER_ID);
++    const data = await NotificationService.getUnreadCount(currentUserId(req));
+ 
+     res.json({
+       success: true,
+diff --git a/backend/src/routes/admin.ts b/backend/src/routes/admin.ts
+index 0d66f66..9f1df07 100644
+--- a/backend/src/routes/admin.ts
++++ b/backend/src/routes/admin.ts
+@@ -5,6 +5,7 @@ import {
+   getEmployers,
+   getEmployer,
+   getPendingEmployers,
++  getEmployerDocuments,
+   approveEmployer,
+   suspendEmployer,
+   getRequirements,
+@@ -28,6 +29,7 @@ import {
+   activateCandidate,
+   suspendCandidate,
+ } from "../controllers/admin";
++import notificationRoutes from "./notifications";
+ 
+ router.use(verifyAuth, requireRole("admin"));
+ /*
+@@ -52,6 +54,13 @@ router.patch("/candidates/:id/suspend", suspendCandidate);
+ router.get("/dashboard", getDashboard);
+ /*
+ |--------------------------------------------------------------------------
++| Notifications
++|--------------------------------------------------------------------------
++*/
++
++router.use("/notifications", notificationRoutes);
++/*
++|--------------------------------------------------------------------------
+ | Employer Management
+ |--------------------------------------------------------------------------
+ */
+@@ -62,6 +71,8 @@ router.get("/employers/pending", getPendingEmployers);
+ 
+ router.get("/employers/:id", getEmployer);
+ 
++router.get("/employers/:id/documents", getEmployerDocuments);
++
+ router.patch("/employers/:id/approve", approveEmployer);
+ 
+ router.patch("/employers/:id/suspend", suspendEmployer);
+diff --git a/backend/src/routes/index.ts b/backend/src/routes/index.ts
+index edf6590..82f0e6f 100644
+--- a/backend/src/routes/index.ts
++++ b/backend/src/routes/index.ts
+@@ -1,5 +1,6 @@
+ import { Router } from "express";
+ 
++import { verifyAuth } from "../middleware/verifyAuth";
+ import adminRoutes from "./admin";
+ import authRoutes from "./auth";
+ import candidateRoutes from "./candidates";
+@@ -77,7 +78,7 @@ router.use("/deployments", deploymentRoutes);
+ 
+ router.use("/offers", offerRoutes);
+ 
+-router.use("/notifications", notificationRoutes);
++router.use("/notifications", verifyAuth, notificationRoutes);
+ 
+ router.use("/admin/reports", reportsRoutes);
+ router.use("/auth", authRoutes);
+diff --git a/backend/src/services/admin/employer.ts b/backend/src/services/admin/employer.ts
+index 85b872d..45465bd 100644
+--- a/backend/src/services/admin/employer.ts
++++ b/backend/src/services/admin/employer.ts
+@@ -100,6 +100,35 @@ export async function getEmployer(employerId: string) {
+   };
+ }
+ 
++/*
++|--------------------------------------------------------------------------
++| Employer Documents
++|--------------------------------------------------------------------------
++*/
++
++export async function getEmployerDocuments(employerId: string) {
++  const { data, error } = await supabase
++    .from("employer_documents")
++    .select(
++      `
++      id,
++      document_type,
++      file_name,
++      file_url,
++      status,
++      expiry_date,
++      uploaded_at,
++      updated_at
++    `,
++    )
++    .eq("employer_id", employerId)
++    .order("uploaded_at", { ascending: false });
++
++  if (error) throw new DatabaseError("Unable to fetch employer documents.", error);
++
++  return data ?? [];
++}
++
+ /*
+ |--------------------------------------------------------------------------
+ | Pending Employers
+diff --git a/src/lib/admin/api.ts b/src/lib/admin/api.ts
+index 0bb3f66..252c7c0 100644
+--- a/src/lib/admin/api.ts
++++ b/src/lib/admin/api.ts
+@@ -21,114 +21,114 @@ api.interceptors.request.use((config) => {
+ 
+ // Dashboard
+ export async function getDashboard() {
+-  const res = await api.get("/employer/dashboard");
++  const res = await api.get("/admin/dashboard");
+   return res.data.data;
+ }
+ 
+ // Candidates
+ export async function getCandidates(params?: Record<string, any>) {
+-  const res = await api.get("/employer/candidates", { params });
++  const res = await api.get("/admin/candidates", { params });
+   return res.data.candidates;
+ }
+ 
+ export async function getCandidate(id: string) {
+-  const res = await api.get(`/employer/candidates/${id}`);
++  const res = await api.get(`/admin/candidates/${id}`);
+   const { candidate, applications, documents, resume } = res.data.data;
+   return { ...candidate, applications, documents, resume };
+ }
+ 
+ export async function activateCandidate(id: string) {
+-  const res = await api.patch(`/employer/candidates/${id}/activate`);
++  const res = await api.patch(`/admin/candidates/${id}/activate`);
+   return res.data.data;
+ }
+ 
+ export async function suspendCandidate(id: string) {
+-  const res = await api.patch(`/employer/candidates/${id}/suspend`);
++  const res = await api.patch(`/admin/candidates/${id}/suspend`);
+   return res.data.data;
+ }
+ 
+ // Employers
+ export async function getEmployers(params?: Record<string, any>) {
+-  const res = await api.get("/employer/employers", { params });
++  const res = await api.get("/admin/employers", { params });
+   return res.data.employers;
+ }
+ 
+ export async function getEmployer(id: string) {
+-  const res = await api.get(`/employer/employers/${id}`);
++  const res = await api.get(`/admin/employers/${id}`);
+   const { employer, requirements } = res.data.data;
+   return { ...employer, requirements };
+ }
+ 
+ export async function approveEmployer(id: string) {
+-  const res = await api.patch(`/employer/employers/${id}/approve`);
++  const res = await api.patch(`/admin/employers/${id}/approve`);
+   return res.data.data;
+ }
+ 
+ export async function suspendEmployer(id: string) {
+-  const res = await api.patch(`/employer/employers/${id}/suspend`);
++  const res = await api.patch(`/admin/employers/${id}/suspend`);
+   return res.data.data;
+ }
+ 
+ export async function activateEmployer(id: string) {
+-  const res = await api.patch(`/employer/employers/${id}/activate`);
++  const res = await api.patch(`/admin/employers/${id}/activate`);
+   return res.data.data;
+ }
+ 
+ // Job Orders
+ export async function getJobOrders(params?: Record<string, any>) {
+-  const res = await api.get("/employer/job-orders", { params });
++  const res = await api.get("/admin/job-orders", { params });
+   return res.data.jobOrders;
+ }
+ 
+ export async function getJobOrder(id: string) {
+-  const res = await api.get(`/employer/job-orders/${id}`);
++  const res = await api.get(`/admin/job-orders/${id}`);
+   return res.data.data;
+ }
+ 
+ export async function updateJobOrder(id: string, payload: Record<string, any>) {
+-  const res = await api.patch(`/employer/job-orders/${id}`, payload);
++  const res = await api.patch(`/admin/job-orders/${id}`, payload);
+   return res.data.data;
+ }
+ 
+ export async function openRecruitment(id: string) {
+-  const res = await api.patch(`/employer/job-orders/${id}/open`);
++  const res = await api.patch(`/admin/job-orders/${id}/open`);
+   return res.data.data;
+ }
+ 
+ export async function closeRecruitment(id: string) {
+-  const res = await api.patch(`/employer/job-orders/${id}/close`);
++  const res = await api.patch(`/admin/job-orders/${id}/close`);
+   return res.data.data;
+ }
+ 
+ // Requirements
+ export async function getRequirements(params?: Record<string, any>) {
+-  const res = await api.get("/employer/requirements", { params });
++  const res = await api.get("/admin/requirements", { params });
+   return res.data.requirements;
+ }
+ 
+ export async function getRequirement(id: string) {
+-  const res = await api.get(`/employer/requirements/${id}`);
++  const res = await api.get(`/admin/requirements/${id}`);
+   return res.data.data;
+ }
+ 
+ export async function approveRequirement(id: string) {
+-  const res = await api.patch(`/employer/requirements/${id}/approve`);
++  const res = await api.patch(`/admin/requirements/${id}/approve`);
+   return res.data.data;
+ }
+ 
+ export async function rejectRequirement(id: string, reason?: string) {
+-  const res = await api.patch(`/employer/requirements/${id}/reject`, { reason });
++  const res = await api.patch(`/admin/requirements/${id}/reject`, { reason });
+   return res.data.data;
+ }
+ 
+ export async function requestClarification(id: string, message: string) {
+-  const res = await api.patch(`/employer/requirements/${id}/clarification`, {
++  const res = await api.patch(`/admin/requirements/${id}/clarification`, {
+     message,
+   });
+   return res.data.data;
+ }
+ 
+ export async function convertRequirement(id: string) {
+-  const res = await api.patch(`/employer/requirements/${id}/convert`);
++  const res = await api.patch(`/admin/requirements/${id}/convert`);
+   return res.data.data;
+ }
+diff --git a/src/lib/admin/dashboard.ts b/src/lib/admin/dashboard.ts
+index 76f5275..ad075e1 100644
+--- a/src/lib/admin/dashboard.ts
++++ b/src/lib/admin/dashboard.ts
+@@ -41,6 +41,11 @@ export async function getEmployer(id: string) {
+   return res.data.data;
+ }
+ 
++export async function getEmployerDocuments(id: string) {
++  const res = await api.get(`/admin/employers/${id}/documents`);
++  return res.data.data;
++}
++
+ export async function approveEmployer(id: string) {
+   const res = await api.patch(`/admin/employers/${id}/approve`);
+   return res.data.data;
+diff --git a/src/routes/Admin/employers/$id.tsx b/src/routes/Admin/employers/$id.tsx
+index 7d52014..3e328b0 100644
+--- a/src/routes/Admin/employers/$id.tsx
++++ b/src/routes/Admin/employers/$id.tsx
+@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
+ import { useEffect, useState } from "react";
+ import {
+   getEmployer,
++  getEmployerDocuments,
+   approveEmployer,
+   suspendEmployer,
+   activateEmployer,
+ } from "@/lib/admin/dashboard";
+ import { Button } from "@/components/ui/button";
+-import { Loader2 } from "lucide-react";
++import { FileText, Loader2 } from "lucide-react";
+ import { DotGrid } from "@/components/site/decor";
+ 
+ export const Route = createFileRoute("/Admin/employers/$id")({
+@@ -49,9 +50,11 @@ function EmployerDetails() {
+ 
+   const [loading, setLoading] = useState(true);
+   const [employer, setEmployer] = useState<any>(null);
++  const [documents, setDocuments] = useState<any[]>([]);
+ 
+   useEffect(() => {
+     loadEmployer();
++    loadDocuments();
+   }, [id]);
+ 
+   async function loadEmployer() {
+@@ -65,6 +68,15 @@ function EmployerDetails() {
+     }
+   }
+ 
++  async function loadDocuments() {
++    try {
++      const data = await getEmployerDocuments(id);
++      setDocuments(data ?? []);
++    } catch {
++      setDocuments([]);
++    }
++  }
++
+   async function approve() {
+     await approveEmployer(id);
+     loadEmployer();
+@@ -140,6 +152,35 @@ function EmployerDetails() {
+         </Panel>
+       </div>
+ 
++      <Panel title="Verification Documents">
++        {documents.length ? (
++          <div className="space-y-3">
++            {documents.map((doc) => (
++              <a
++                key={doc.id}
++                href={doc.file_url}
++                target="_blank"
++                rel="noreferrer"
++                className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue"
++              >
++                <div className="flex items-center gap-3">
++                  <FileText className="text-blue" size={18} />
++                  <div>
++                    <h4 className="font-semibold text-navy">
++                      {doc.document_type || "Company Certificate"}
++                    </h4>
++                    <p className="text-sm text-ink">{doc.file_name}</p>
++                  </div>
++                </div>
++                <StatusPill status={doc.status} />
++              </a>
++            ))}
++          </div>
++        ) : (
++          <p className="text-sm text-ink">No documents uploaded yet.</p>
++        )}
++      </Panel>
++
+       <Panel title="Submitted Requirements">
+         {employer.requirements?.length ? (
+           <div className="space-y-3">
+diff --git a/src/routes/Admin/notifications/NotificationCard.tsx b/src/routes/Admin/notifications/NotificationCard.tsx
+index b48bc6e..fdf2596 100644
+--- a/src/routes/Admin/notifications/NotificationCard.tsx
++++ b/src/routes/Admin/notifications/NotificationCard.tsx
+@@ -1,3 +1,4 @@
++import { Link } from "@tanstack/react-router";
+ import { Card, CardContent } from "@/components/ui/card";
+ import { Button } from "@/components/ui/button";
+ 
+@@ -20,6 +21,14 @@ export default function NotificationCard({ notification, onRead, onDelete }: Pro
+         </div>
+ 
+         <div className="flex gap-2">
++          {notification.related_entity === "employer" && notification.related_entity_id && (
++            <Button size="sm" variant="outline" asChild>
++              <Link to="/Admin/employers/$id" params={{ id: notification.related_entity_id }}>
++                View & Approve
++              </Link>
++            </Button>
++          )}
++
+           {!notification.is_read && (
+             <Button size="sm" onClick={onRead}>
+               Mark Read
+diff --git a/src/routes/Employer.register.tsx b/src/routes/Employer.register.tsx
+index f505a8a..75f2e04 100644
+--- a/src/routes/Employer.register.tsx
++++ b/src/routes/Employer.register.tsx
+@@ -31,7 +31,7 @@ function EmployerRegisterPage() {
+     setSubmitting(true);
+     try {
+       await updateProfile({ company_name: companyName.trim() });
+-      await uploadEmployerDocument(file, "company_verification");
++      await uploadEmployerDocument(file, "company_certificate");
+       await submitForReview();
+ 
+       navigate({ to: "/Employer/pending-approval" });

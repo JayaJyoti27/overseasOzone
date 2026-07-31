@@ -2,12 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   getEmployer,
+  getEmployerDocuments,
   approveEmployer,
   suspendEmployer,
   activateEmployer,
 } from "@/lib/admin/dashboard";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { DotGrid } from "@/components/site/decor";
 
 export const Route = createFileRoute("/Admin/employers/$id")({
@@ -49,9 +50,11 @@ function EmployerDetails() {
 
   const [loading, setLoading] = useState(true);
   const [employer, setEmployer] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
 
   useEffect(() => {
     loadEmployer();
+    loadDocuments();
   }, [id]);
 
   async function loadEmployer() {
@@ -62,6 +65,15 @@ function EmployerDetails() {
       setEmployer(data.data ?? data);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadDocuments() {
+    try {
+      const data = await getEmployerDocuments(id);
+      setDocuments(data ?? []);
+    } catch {
+      setDocuments([]);
     }
   }
 
@@ -139,6 +151,35 @@ function EmployerDetails() {
           </div>
         </Panel>
       </div>
+
+      <Panel title="Verification Documents">
+        {documents.length ? (
+          <div className="space-y-3">
+            {documents.map((doc) => (
+              <a
+                key={doc.id}
+                href={doc.file_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue"
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="text-blue" size={18} />
+                  <div>
+                    <h4 className="font-semibold text-navy">
+                      {doc.document_type || "Company Certificate"}
+                    </h4>
+                    <p className="text-sm text-ink">{doc.file_name}</p>
+                  </div>
+                </div>
+                <StatusPill status={doc.status} />
+              </a>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-ink">No documents uploaded yet.</p>
+        )}
+      </Panel>
 
       <Panel title="Submitted Requirements">
         {employer.requirements?.length ? (

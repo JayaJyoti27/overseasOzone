@@ -1,5 +1,6 @@
 import { Router } from "express";
 
+import { verifyAuth } from "../middleware/verifyAuth";
 import adminRoutes from "./admin";
 import authRoutes from "./auth";
 import candidateRoutes from "./candidates";
@@ -77,7 +78,7 @@ router.use("/deployments", deploymentRoutes);
 
 router.use("/offers", offerRoutes);
 
-router.use("/notifications", notificationRoutes);
+router.use("/notifications", verifyAuth, notificationRoutes);
 
 router.use("/admin/reports", reportsRoutes);
 router.use("/auth", authRoutes);

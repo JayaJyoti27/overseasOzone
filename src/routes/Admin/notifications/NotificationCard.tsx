@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +21,14 @@ export default function NotificationCard({ notification, onRead, onDelete }: Pro
         </div>
 
         <div className="flex gap-2">
+          {notification.related_entity === "employer" && notification.related_entity_id && (
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/Admin/employers/$id" params={{ id: notification.related_entity_id }}>
+                View & Approve
+              </Link>
+            </Button>
+          )}
+
           {!notification.is_read && (
             <Button size="sm" onClick={onRead}>
               Mark Read

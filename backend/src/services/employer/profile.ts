@@ -62,32 +62,25 @@ interface UpdateEmployerProfileDto {
 }
 
 export async function updateEmployerProfile(employerId: string, payload: UpdateEmployerProfileDto) {
-  const { data: employer } = await supabase
-    .from("employers")
-    .select("id")
-    .eq("id", employerId)
-    .single();
-
-  if (!employer) {
-    throw new NotFoundError("Employer not found.");
-  }
-
   const { data, error } = await supabase
     .from("employers")
-    .update({
-      company_name: payload.company_name,
-      contact_person: payload.contact_person,
-      designation: payload.designation,
-      phone: payload.phone,
-      website: payload.website,
-      industry: payload.industry,
-      logo_url: payload.logo_url,
-      employee_count: payload.employee_count,
-      head_office: payload.head_office,
-      verification_doc_url: payload.verification_doc_url,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", employerId)
+    .upsert(
+      {
+        id: employerId,
+        company_name: payload.company_name,
+        contact_person: payload.contact_person,
+        designation: payload.designation,
+        phone: payload.phone,
+        website: payload.website,
+        industry: payload.industry,
+        logo_url: payload.logo_url,
+        employee_count: payload.employee_count,
+        head_office: payload.head_office,
+        verification_doc_url: payload.verification_doc_url,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    )
     .select()
     .single();
 

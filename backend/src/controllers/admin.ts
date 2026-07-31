@@ -176,6 +176,28 @@ export async function getEmployer(req: Request, res: Response) {
 
 /*
 |--------------------------------------------------------------------------
+| Employer Documents
+|--------------------------------------------------------------------------
+*/
+
+export async function getEmployerDocuments(req: Request, res: Response) {
+  try {
+    const data = await AdminService.getEmployerDocuments(String(req.params.id));
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Pending Employers
 |--------------------------------------------------------------------------
 */

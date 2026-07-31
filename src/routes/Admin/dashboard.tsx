@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import {
   Building2,
   Users,
+  UserPlus,
   FileText,
   BriefcaseBusiness,
+  ClipboardCheck,
+  ShieldAlert,
   Loader2,
   AlertCircle,
   TrendingUp,
@@ -114,7 +117,7 @@ function Dashboard() {
     return (
       <div className="flex h-[70vh] flex-col items-center justify-center gap-3">
         <Loader2 className="animate-spin text-blue" size={32} />
-        <p className="text-sm text-ink">Loading dashboard…</p>
+        <p className="text-sm text-ink">Loading dashboard...</p>
       </div>
     );
   }
@@ -133,9 +136,10 @@ function Dashboard() {
     );
   }
 
+  const stats = dashboard?.statistics ?? {};
+
   return (
     <div className="space-y-8">
-      {/* Hero banner — light blue-wash, matching homepage hero */}
       <div className="relative overflow-hidden rounded-[28px] bg-blue-wash px-8 py-8">
         <Blob
           className="-right-16 -top-24 h-72 w-72 opacity-60"
@@ -150,46 +154,68 @@ function Dashboard() {
             </span>
             <h1 className="mt-3 font-display text-3xl font-bold text-navy">Admin Dashboard</h1>
             <p className="mt-1 text-ink">
-              Recruitment overview across candidates, employers and jobs
+              Overview of portal activities across candidates, employers and jobs
             </p>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Employers"
-          value={dashboard?.statistics?.employers ?? 0}
-          icon={Building2}
-          accent="bg-blue"
-        />
-        <StatCard
-          title="Candidates"
-          value={dashboard?.statistics?.candidates ?? 0}
+          title="Total Candidates"
+          value={stats.totalCandidates ?? 0}
           icon={Users}
           accent="bg-navy"
         />
         <StatCard
-          title="Requirements"
-          value={dashboard?.statistics?.requirements ?? 0}
-          icon={FileText}
+          title="New Candidate Registrations"
+          value={stats.newCandidateRegistrations ?? 0}
+          icon={UserPlus}
+          accent="bg-emerald-500"
+        />
+        <StatCard
+          title="Total Employers"
+          value={stats.totalEmployers ?? 0}
+          icon={Building2}
+          accent="bg-blue"
+        />
+        <StatCard
+          title="Active Employers"
+          value={stats.activeEmployers ?? 0}
+          icon={ShieldCheck}
+          accent="bg-blue-soft"
+        />
+        <StatCard
+          title="Active Job Orders"
+          value={stats.activeJobOrders ?? 0}
+          icon={BriefcaseBusiness}
           accent="bg-gold"
         />
         <StatCard
-          title="Job Orders"
-          value={dashboard?.statistics?.activeRecruitments ?? 0}
-          icon={BriefcaseBusiness}
-          accent="bg-blue-soft"
+          title="Applications Received"
+          value={stats.applicationsReceived ?? 0}
+          icon={FileText}
+          accent="bg-navy"
+        />
+        <StatCard
+          title="Pending Candidate Reviews"
+          value={stats.pendingCandidateReviews ?? 0}
+          icon={ClipboardCheck}
+          accent="bg-amber-500"
+        />
+        <StatCard
+          title="Pending Employer Reviews"
+          value={stats.pendingEmployerReviews ?? 0}
+          icon={ShieldAlert}
+          accent="bg-amber-500"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ListPanel
-          title="Pending Employers"
+          title="Pending Employer Reviews"
           emptyLabel="No pending employers"
-          items={(dashboard?.recentEmployers ?? []).filter(
-            (e: any) => e.approval_status === "pending",
-          )}
+          items={dashboard?.pendingEmployers ?? []}
           renderItem={(e: any) => (
             <div
               key={e.id}
@@ -216,7 +242,7 @@ function Dashboard() {
         />
 
         <ListPanel
-          title="Pending Requirements"
+          title="Pending Requirement Reviews"
           emptyLabel="No pending requirements"
           items={dashboard?.pendingRequirements ?? []}
           renderItem={(r: any) => (

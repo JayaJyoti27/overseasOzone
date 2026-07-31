@@ -41,6 +41,11 @@ export async function getEmployer(id: string) {
   return res.data.data;
 }
 
+export async function getEmployerDocuments(id: string) {
+  const res = await api.get(`/admin/employers/${id}/documents`);
+  return res.data.data;
+}
+
 export async function approveEmployer(id: string) {
   const res = await api.patch(`/admin/employers/${id}/approve`);
   return res.data.data;

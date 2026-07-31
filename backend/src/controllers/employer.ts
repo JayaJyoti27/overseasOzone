@@ -80,6 +80,7 @@ export async function submitForReview(req: Request, res: Response) {
       data,
     });
   } catch (err: any) {
+    console.error("submitForReview error:", err);
     return res.status(500).json({
       success: false,
       message: err.message,
