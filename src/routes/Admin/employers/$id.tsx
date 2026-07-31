@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getEmployer, approveEmployer, suspendEmployer, activateEmployer } from "@/lib/admin/api";
-
+import {
+  getEmployer,
+  approveEmployer,
+  suspendEmployer,
+  activateEmployer,
+} from "@/lib/admin/dashboard";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { DotGrid } from "@/components/site/decor";

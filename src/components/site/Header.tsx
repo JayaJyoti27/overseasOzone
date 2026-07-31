@@ -32,7 +32,7 @@ const CANDIDATE_SERVICES = [
 
 const EMPLOYER_SERVICES = [
   { label: "For Employers", to: "/employers", desc: "Overview & how we work" },
-  { label: "My Dashboard", to: "/Login", desc: "First shortlist in 48 hours" },
+  { label: "My Dashboard", to: "/employer", desc: "Sign in or register your company" },
   {
     label: "Healthcare Recruitment",
     to: "/Services/Healthcare-rec",
@@ -400,13 +400,6 @@ export function Header() {
                 <MessageCircle className="h-4 w-4" />
                 Chat on WhatsApp
               </a>
-              <Link
-                to="/Jobs"
-                onClick={() => setMobileOpen(false)}
-                className="block rounded-full bg-navy py-2.5 text-center text-sm font-semibold text-navy-foreground"
-              >
-                Apply Now
-              </Link>
             </div>
           </div>
         </div>

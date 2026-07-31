@@ -1,8 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-
-import { getEmployers, approveEmployer, suspendEmployer, activateEmployer } from "@/lib/admin/api";
-
+import {
+  getEmployers,
+  getEmployer,
+  approveEmployer,
+  suspendEmployer,
+  activateEmployer,
+} from "@/lib/admin/dashboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, Building2, Inbox } from "lucide-react";
