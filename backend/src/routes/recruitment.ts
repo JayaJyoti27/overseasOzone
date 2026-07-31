@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { verifyAuth, requireRole } from "../middleware/verifyAuth";
 
 import {
   // Applications
@@ -51,6 +52,8 @@ import {
 } from "../controllers/recruitment";
 
 const router = Router();
+
+router.use(verifyAuth, requireRole("admin"));
 
 /*
 |--------------------------------------------------------------------------

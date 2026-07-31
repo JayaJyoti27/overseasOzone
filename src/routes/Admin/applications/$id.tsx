@@ -53,7 +53,7 @@ function ApplicationDetails() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">{application.candidate?.full_name}</h1>
+        <h1 className="text-3xl font-bold">{application.candidate?.name}</h1>
 
         <p className="text-muted-foreground">{application.job_order?.title}</p>
       </div>
@@ -66,7 +66,7 @@ function ApplicationDetails() {
 
           <CardContent className="space-y-2">
             <p>
-              <strong>Name:</strong> {application.candidate?.full_name}
+              <strong>Name:</strong> {application.candidate?.name}
             </p>
 
             <p>

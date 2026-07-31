@@ -1,8 +1,6 @@
 import { Request, Response } from "express";
 import * as RecruitmentService from "../services/admin/recruitment";
 
-const ADMIN_ID = "admin-demo";
-
 /*
 |--------------------------------------------------------------------------
 | Applications
@@ -145,7 +143,7 @@ export async function scheduleInterview(req: Request, res: Response) {
   try {
     const data = await RecruitmentService.scheduleInterview(
       String(req.params.applicationId),
-      ADMIN_ID,
+      req.adminId!,
       req.body,
     );
 
@@ -208,7 +206,7 @@ export async function getDocuments(req: Request, res: Response) {
 }
 
 export async function verifyDocument(req: Request, res: Response) {
-  const data = await RecruitmentService.verifyDocument(String(req.params.id), ADMIN_ID);
+  const data = await RecruitmentService.verifyDocument(String(req.params.id), req.adminId!);
 
   res.json({
     success: true,
@@ -219,7 +217,7 @@ export async function verifyDocument(req: Request, res: Response) {
 export async function rejectDocument(req: Request, res: Response) {
   const data = await RecruitmentService.rejectDocument(
     String(req.params.id),
-    ADMIN_ID,
+    req.adminId!,
     req.body.reason,
   );
 
@@ -246,7 +244,7 @@ export async function getMedicals(req: Request, res: Response) {
 export async function scheduleMedical(req: Request, res: Response) {
   const data = await RecruitmentService.scheduleMedical(
     String(req.params.applicationId),
-    ADMIN_ID,
+    req.adminId!,
     req.body,
   );
 
@@ -259,7 +257,7 @@ export async function scheduleMedical(req: Request, res: Response) {
 export async function markMedicalFit(req: Request, res: Response) {
   const data = await RecruitmentService.markMedicalFit(
     String(req.params.id),
-    ADMIN_ID,
+    req.adminId!,
     req.body.reportDocumentId,
     req.body.expiryDate,
   );
@@ -273,7 +271,7 @@ export async function markMedicalFit(req: Request, res: Response) {
 export async function markMedicalUnfit(req: Request, res: Response) {
   const data = await RecruitmentService.markMedicalUnfit(
     String(req.params.id),
-    ADMIN_ID,
+    req.adminId!,
     req.body.remarks,
   );
 
@@ -300,7 +298,7 @@ export async function getVisas(req: Request, res: Response) {
 export async function createVisa(req: Request, res: Response) {
   const data = await RecruitmentService.createVisa(
     String(req.params.applicationId),
-    ADMIN_ID,
+    req.adminId!,
     req.body,
   );
 
@@ -313,7 +311,7 @@ export async function createVisa(req: Request, res: Response) {
 export async function approveVisa(req: Request, res: Response) {
   const data = await RecruitmentService.approveVisa(
     String(req.params.id),
-    ADMIN_ID,
+    req.adminId!,
     req.body.visaNumber,
     req.body.issueDate,
     req.body.expiryDate,
@@ -351,7 +349,7 @@ export async function getDeployments(req: Request, res: Response) {
 export async function createDeployment(req: Request, res: Response) {
   const data = await RecruitmentService.createDeployment(
     String(req.params.applicationId),
-    ADMIN_ID,
+    req.adminId!,
     req.body,
   );
 
@@ -422,7 +420,7 @@ export async function getTimeline(req: Request, res: Response) {
 export async function markMedicalRetest(req: Request, res: Response) {
   const data = await RecruitmentService.markMedicalRetest(
     String(req.params.id),
-    ADMIN_ID,
+    req.adminId!,
     req.body.remarks,
   );
 
