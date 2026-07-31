@@ -1,0 +1,170 @@
+diff --git a/src/routes/Admin/candidates/$id.tsx b/src/routes/Admin/candidates/$id.tsx
+index c950495..981f77b 100644
+--- a/src/routes/Admin/candidates/$id.tsx
++++ b/src/routes/Admin/candidates/$id.tsx
+@@ -3,9 +3,26 @@ import { useEffect, useState } from "react";
+ 
+ import { getCandidate, activateCandidate, suspendCandidate } from "@/lib/admin/api";
+ import { Button } from "@/components/ui/button";
+-import { Loader2, Download, Circle } from "lucide-react";
++import { Loader2, Download, Circle, FileX } from "lucide-react";
+ import { DotGrid } from "@/components/site/decor";
+ 
++const DOCUMENT_LABELS: Record<string, string> = {
++  passport: "Passport",
++  resume: "Resume",
++  aadhaar: "Aadhaar",
++  pan: "PAN Card",
++  degree_certificate: "Degree Certificate",
++  experience_certificate: "Experience Certificate",
++  medical_certificate: "Medical Certificate",
++  police_clearance_certificate: "Police Clearance Certificate",
++  offer_letter: "Offer Letter",
++  employment_contract: "Employment Contract",
++  visa_application: "Visa Application",
++  visa: "Visa",
++  photo: "Photo",
++  other: "Other",
++};
++
+ export const Route = createFileRoute("/Admin/candidates/$id")({
+   component: CandidateDetails,
+ });
+@@ -88,7 +105,9 @@ function CandidateDetails() {
+           <span className="text-xs font-semibold uppercase tracking-widest text-blue">
+             Candidate Profile
+           </span>
+-          <h1 className="mt-1 font-display text-3xl font-bold text-navy">{candidate.name}</h1>
++          <h1 className="mt-1 font-display text-3xl font-bold text-navy">
++            {candidate.full_name}
++          </h1>
+         </div>
+ 
+         <StatusPill status={candidate.status} />
+@@ -99,12 +118,20 @@ function CandidateDetails() {
+         <div className="space-y-6 lg:col-span-2">
+           <Panel title="Personal Information">
+             <div className="grid grid-cols-2 gap-4">
+-              <Info label="Name" value={candidate.name} />
++              <Info label="Name" value={candidate.full_name} />
+               <Info label="Email" value={candidate.email} />
+               <Info label="Phone" value={candidate.phone} />
+-              <Info label="Country" value={candidate.country} />
++              <Info label="Nationality" value={candidate.nationality} />
++              <Info label="Preferred Country" value={candidate.preferred_country} />
+               <Info label="Passport" value={candidate.passport_number} />
+-              <Info label="Experience" value={candidate.experience} />
++              <Info
++                label="Expected Salary"
++                value={
++                  candidate.expected_salary
++                    ? `${candidate.salary_currency ?? ""} ${candidate.expected_salary}`.trim()
++                    : undefined
++                }
++              />
+             </div>
+           </Panel>
+ 
+@@ -137,10 +164,10 @@ function CandidateDetails() {
+                   className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue"
+                 >
+                   <div>
+-                    <h4 className="font-semibold text-navy">{app.role}</h4>
+-                    <p className="text-sm text-ink">{app.company}</p>
++                    <h4 className="font-semibold text-navy">{app.job?.title ?? "-"}</h4>
++                    <p className="text-sm text-ink">{app.job?.country ?? "-"}</p>
+                   </div>
+-                  <StatusPill status={app.status} />
++                  <StatusPill status={app.internal_status ?? app.status} />
+                 </div>
+               ))}
+             </div>
+@@ -151,15 +178,36 @@ function CandidateDetails() {
+         <div className="space-y-6">
+           <Panel title="Documents">
+             <div className="space-y-3">
+-              <DocumentButton title="Resume" />
+-              <DocumentButton title="Passport" />
+-              <DocumentButton title="Medical" />
+-              <DocumentButton title="Certificates" />
++              {!candidate.documents?.length && (
++                <p className="text-sm text-ink">No documents uploaded yet.</p>
++              )}
++
++              {candidate.documents?.map((doc: any) => (
++                <DocumentButton
++                  key={doc.id}
++                  title={DOCUMENT_LABELS[doc.document_type] ?? doc.document_type}
++                  url={doc.public_url}
++                  status={doc.status}
++                />
++              ))}
+             </div>
+           </Panel>
+ 
+           <Panel title="Actions">
+             <div className="space-y-3">
++              {candidate.resume?.public_url && (
++                <Button asChild variant="outline" className="w-full rounded-full">
++                  <a
++                    href={candidate.resume.public_url}
++                    target="_blank"
++                    rel="noopener noreferrer"
++                    download
++                  >
++                    Download Resume
++                    <Download size={16} className="ml-2" />
++                  </a>
++                </Button>
++              )}
+               <Button className="w-full rounded-full bg-navy hover:bg-blue" onClick={activate}>
+                 Activate Candidate
+               </Button>
+@@ -207,14 +255,44 @@ function Status({ title }: any) {
+   );
+ }
+ 
+-function DocumentButton({ title }: { title: string }) {
++function DocumentButton({
++  title,
++  url,
++  status,
++}: {
++  title: string;
++  url?: string;
++  status?: string;
++}) {
++  if (!url) {
++    return (
++      <div className="flex w-full items-center justify-between rounded-full border border-dashed border-border px-4 py-2 text-sm text-ink/60">
++        <span className="flex items-center gap-2">
++          <FileX size={16} />
++          {title}
++        </span>
++        <span className="text-xs">Not uploaded</span>
++      </div>
++    );
++  }
++
+   return (
+     <Button
++      asChild
+       variant="outline"
+       className="w-full justify-between rounded-full border-border hover:border-blue hover:text-blue"
+     >
+-      {title}
+-      <Download size={16} />
++      <a href={url} target="_blank" rel="noopener noreferrer" download>
++        <span className="flex items-center gap-2">
++          {title}
++          {status && (
++            <span className="rounded-full bg-blue-wash px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue">
++              {status}
++            </span>
++          )}
++        </span>
++        <Download size={16} />
++      </a>
+     </Button>
+   );
+ }
