@@ -96,6 +96,11 @@ export async function sendCandidateLoginLink(email: string) {
  * `emailRedirectTo` brings them back to the employer login page, which then
  * finishes the login/signup.
  */
+
+/**
+ * Sends a magic sign-in link to the given email for employer signup/login.
+ * Mirrors sendCandidateLoginLink but redirects back to /employer.
+ */
 export async function sendEmployerLoginLink(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -105,4 +110,15 @@ export async function sendEmployerLoginLink(email: string) {
     },
   });
   if (error) throw new Error(error.message);
+}
+
+/**
+ * Creates a brand-new employer account with email + password.
+ * After this succeeds, call completeEmployerSignup() (in employer/api.ts)
+ * to create the profiles + employers rows, same pattern as candidate.
+ */
+export async function signupEmployerWithPassword(email: string, password: string): Promise<void> {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw new Error(error.message);
+  if (!data.user) throw new Error("Signup failed — no user returned.");
 }

@@ -58,6 +58,7 @@ interface UpdateEmployerProfileDto {
   logo_url?: string;
   employee_count?: number;
   head_office?: string;
+  verification_doc_url?: string;
 }
 
 export async function updateEmployerProfile(employerId: string, payload: UpdateEmployerProfileDto) {
@@ -83,6 +84,7 @@ export async function updateEmployerProfile(employerId: string, payload: UpdateE
       logo_url: payload.logo_url,
       employee_count: payload.employee_count,
       head_office: payload.head_office,
+      verification_doc_url: payload.verification_doc_url,
       updated_at: new Date().toISOString(),
     })
     .eq("id", employerId)

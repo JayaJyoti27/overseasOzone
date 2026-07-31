@@ -1,3 +1,4 @@
+// src/routes/Employer.pending-approval.tsx
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 

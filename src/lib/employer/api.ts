@@ -5,7 +5,10 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true,
 });
+console.log("VITE_API_URL is:", import.meta.env.VITE_API_URL);
 
+// Attaches the current Supabase session token to every outgoing request,
+// same pattern as src/lib/candidate/api.ts.
 api.interceptors.request.use(async (config) => {
   const {
     data: { session },
@@ -18,25 +21,29 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-/* =========================================================
-   SIGNUP
-========================================================= */
+/*
+|--------------------------------------------------------------------------
+| Signup / Auth
+|--------------------------------------------------------------------------
+*/
 
 export interface CompleteEmployerSignupResponse {
   success: boolean;
   isNewProfile: boolean;
-  approvalStatus: "pending" | "approved";
   profile: { id: string; role: string; full_name: string | null };
 }
 
-export async function completeEmployerSignup(payload: {
-  company_name: string;
-  contact_person: string;
-  phone: string;
-}): Promise<CompleteEmployerSignupResponse> {
-  const { data } = await api.post("/auth/complete-employer-signup", payload);
+/** Call right after password signup or magic-link verification — creates the profile+employer row on first login. */
+export const completeEmployerSignup = async (): Promise<CompleteEmployerSignupResponse> => {
+  const { data } = await api.post("/auth/complete-employer-signup");
   return data;
-}
+};
+
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+*/
 
 export async function getDashboard() {
   const response = await api.get("/employer/dashboard");
@@ -145,13 +152,8 @@ export async function markNotificationRead(id: string) {
 export async function getCandidates() {
   const { data } = await api.get("/employer/candidates");
   return data.data;
-} /*
-|--------------------------------------------------------------------------
-| Onboarding — Documents & Review
-|--------------------------------------------------------------------------
-*/
-
-export async function uploadCompanyDocument(file: File, documentType: string) {
+}
+export async function uploadEmployerDocument(file: File, documentType: string) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("document_type", documentType);
@@ -159,7 +161,6 @@ export async function uploadCompanyDocument(file: File, documentType: string) {
   const { data } = await api.post("/employer/documents", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-
   return data.data;
 }
 
