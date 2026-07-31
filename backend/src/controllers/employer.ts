@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as EmployerService from "../services/employer";
 import { getEmployerCandidate, getEmployerCandidates } from "../services/employer/candidate";
+import * as StorageService from "../services/storage";
 
 /*
 |--------------------------------------------------------------------------
@@ -11,6 +12,68 @@ import { getEmployerCandidate, getEmployerCandidates } from "../services/employe
 export async function getDocuments(req: Request, res: Response) {
   try {
     const data = await EmployerService.getEmployerDocuments(req.employerId!);
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
+
+export async function uploadDocument(req: Request, res: Response) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file was uploaded.",
+      });
+    }
+
+    const documentType = req.body?.document_type;
+
+    if (!documentType) {
+      return res.status(400).json({
+        success: false,
+        message: "document_type is required.",
+      });
+    }
+
+    const employerId = req.employerId!;
+    const path = `${employerId}/${documentType}/${Date.now()}-${req.file.originalname}`;
+
+    const publicUrl = await StorageService.uploadDocument(
+      "employer-documents",
+      path,
+      req.file.buffer,
+      req.file.mimetype,
+    );
+
+    const data = await EmployerService.uploadEmployerDocument(employerId, {
+      document_type: documentType,
+      file_name: req.file.originalname,
+      file_url: publicUrl,
+    });
+
+    return res.status(201).json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
+
+export async function submitForReview(req: Request, res: Response) {
+  try {
+    const data = await EmployerService.submitEmployerForReview(req.employerId!);
 
     return res.json({
       success: true,

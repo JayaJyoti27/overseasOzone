@@ -18,9 +18,12 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   getDocuments,
+  uploadDocument,
+  submitForReview,
   getCandidate,
   getCandidates,
 } from "../controllers/employer";
+import { upload } from "../middleware/upload";
 
 const router = Router();
 
@@ -91,6 +94,10 @@ router.get("/notifications", getNotifications);
 router.patch("/notifications/read-all", markAllNotificationsRead);
 
 router.patch("/notifications/:id/read", markNotificationRead);
+router.get("/documents", getDocuments);
+router.post("/documents", upload.single("file"), uploadDocument);
+router.post("/submit-for-review", submitForReview);
+
 router.get("/candidates", getCandidates);
 router.get("/candidates/:id", getCandidate);
 export default router;

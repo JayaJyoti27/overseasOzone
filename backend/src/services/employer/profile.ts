@@ -50,31 +50,17 @@ export async function getEmployerProfile(employerId: string) {
 
 interface UpdateEmployerProfileDto {
   company_name?: string;
-
   contact_person?: string;
-
   designation?: string;
-
   phone?: string;
-
   website?: string;
-
   industry?: string;
-
   logo_url?: string;
-
   employee_count?: number;
-
   head_office?: string;
 }
 
 export async function updateEmployerProfile(employerId: string, payload: UpdateEmployerProfileDto) {
-  /*
-  |--------------------------------------------------------------------------
-  | Check Employer Exists
-  |--------------------------------------------------------------------------
-  */
-
   const { data: employer } = await supabase
     .from("employers")
     .select("id")
@@ -84,12 +70,6 @@ export async function updateEmployerProfile(employerId: string, payload: UpdateE
   if (!employer) {
     throw new NotFoundError("Employer not found.");
   }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Update Editable Fields Only
-  |--------------------------------------------------------------------------
-  */
 
   const { data, error } = await supabase
     .from("employers")
@@ -113,21 +93,11 @@ export async function updateEmployerProfile(employerId: string, payload: UpdateE
     throw new DatabaseError("Unable to update company profile.", error);
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Activity Log
-  |--------------------------------------------------------------------------
-  */
-
   await supabase.from("activity_logs").insert({
     user_id: employerId,
-
     action: "Company Profile Updated",
-
     entity: "employer",
-
     entity_id: employerId,
-
     metadata: payload,
   });
 
@@ -156,4 +126,40 @@ export async function updateEmployerLogo(employerId: string, logoUrl: string) {
   }
 
   return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Submit For Review — notifies every admin that a new employer is waiting
+|--------------------------------------------------------------------------
+*/
+
+export async function submitEmployerForReview(employerId: string) {
+  const { data: employer, error } = await supabase
+    .from("employers")
+    .select("id, company_name, approval_status")
+    .eq("id", employerId)
+    .single();
+
+  if (error || !employer) {
+    throw new NotFoundError("Employer not found.");
+  }
+
+  const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+
+  const companyName = employer.company_name || "A new employer";
+
+  for (const admin of admins ?? []) {
+    await supabase.from("notifications").insert({
+      user_id: admin.id,
+      title: "New employer awaiting approval",
+      message: `${companyName} has submitted their registration and documents for review.`,
+      type: "employer_registration",
+      related_entity: "employer",
+      related_entity_id: employerId,
+      is_read: false,
+    });
+  }
+
+  return { notified: admins?.length ?? 0 };
 }

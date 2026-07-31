@@ -1,12 +1,7 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
 
-<<<<<<< HEAD
 export async function getEmployerCandidate(employerId: string, candidateId: string) {
-=======
-export async function getEmployerCandidate(candidateId: string, employerId: string) {
-  // Scope check: candidate must have an application tied to one of this employer's job orders
->>>>>>> bfb50e0e7f772bb182945a4adf0a1341b4ed4d8e
   const { data: applications, error: appError } = await supabase
     .from("applications")
     .select(
@@ -16,11 +11,7 @@ export async function getEmployerCandidate(candidateId: string, employerId: stri
     `,
     )
     .eq("candidate_id", candidateId)
-<<<<<<< HEAD
-    .eq("job.employer_id", employerId) // was DEMO_EMPLOYER_ID
-=======
     .eq("job.employer_id", employerId)
->>>>>>> bfb50e0e7f772bb182945a4adf0a1341b4ed4d8e
     .order("created_at", { ascending: false });
 
   // ...rest of function unchanged;
