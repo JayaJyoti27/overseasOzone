@@ -18,18 +18,14 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   getDocuments,
+  getCandidate,
+  getCandidates,
 } from "../controllers/employer";
-import { verifyAuth, requireRole } from "../middleware/verifyAuth";
 
-import { getCandidate, getCandidates } from "../controllers/employer";
 const router = Router();
-<<<<<<< HEAD
-router.use(verifyAuth, requireRole("employer"));
-=======
 
 router.use(verifyAuth, requireRole("employer"));
 
->>>>>>> bfb50e0e7f772bb182945a4adf0a1341b4ed4d8e
 /*
 |--------------------------------------------------------------------------
 | Dashboard
