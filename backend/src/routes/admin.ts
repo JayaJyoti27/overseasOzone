@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { verifyAuth, requireRole } from "../middleware/verifyAuth";
 import {
   getDashboard,
   getEmployers,
@@ -27,6 +28,8 @@ import {
   activateCandidate,
   suspendCandidate,
 } from "../controllers/admin";
+
+router.use(verifyAuth, requireRole("admin"));
 /*
 |--------------------------------------------------------------------------
 | Dashboard

@@ -297,7 +297,14 @@ export async function getNotifications(req: Request, res: Response) {
 
 export async function markNotificationRead(req: Request, res: Response) {
   try {
+<<<<<<< HEAD
     const data = await EmployerService.markNotificationRead(req.employerId!, String(req.params.id));
+=======
+    const data = await EmployerService.markNotificationRead(
+      req.employerId!,
+      String(req.params.id),
+    );
+>>>>>>> bfb50e0e7f772bb182945a4adf0a1341b4ed4d8e
 
     return res.json({
       success: true,
@@ -327,12 +334,17 @@ export async function markAllNotificationsRead(req: Request, res: Response) {
   }
 }
 export async function getCandidate(req: Request, res: Response) {
+<<<<<<< HEAD
   try {
     const data = await getEmployerCandidate(req.employerId!, req.params.id);
     res.json({ success: true, data });
   } catch (err: any) {
     return res.status(404).json({ success: false, message: err.message });
   }
+=======
+  const data = await getEmployerCandidate(String(req.params.id), req.employerId!);
+  res.json(data);
+>>>>>>> bfb50e0e7f772bb182945a4adf0a1341b4ed4d8e
 }
 
 export async function getCandidates(req: Request, res: Response) {

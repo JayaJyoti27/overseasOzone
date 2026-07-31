@@ -8,8 +8,6 @@ import * as AdminService from "../services/admin";
 |--------------------------------------------------------------------------
 */
 
-const ADMIN_ID = "admin-demo";
-
 /*
 |--------------------------------------------------------------------------
 | Dashboard
@@ -208,7 +206,7 @@ export async function getPendingEmployers(req: Request, res: Response) {
 
 export async function approveEmployer(req: Request, res: Response) {
   try {
-    const data = await AdminService.approveEmployer(String(req.params.id), ADMIN_ID);
+    const data = await AdminService.approveEmployer(String(req.params.id), req.adminId!);
 
     return res.json({
       success: true,
@@ -317,7 +315,7 @@ export async function getRequirement(req: Request, res: Response) {
 
 export async function reviewRequirement(req: Request, res: Response) {
   try {
-    const data = await AdminService.reviewRequirement(String(req.params.id), ADMIN_ID);
+    const data = await AdminService.reviewRequirement(String(req.params.id), req.adminId!);
 
     return res.json({
       success: true,
@@ -335,7 +333,7 @@ export async function requestClarification(req: Request, res: Response) {
   try {
     const data = await AdminService.requestClarification(
       String(req.params.id),
-      ADMIN_ID,
+      req.adminId!,
       req.body.notes,
     );
 
@@ -353,7 +351,7 @@ export async function requestClarification(req: Request, res: Response) {
 
 export async function approveRequirement(req: Request, res: Response) {
   try {
-    const data = await AdminService.approveRequirement(String(req.params.id), ADMIN_ID);
+    const data = await AdminService.approveRequirement(String(req.params.id), req.adminId!);
 
     return res.json({
       success: true,
@@ -371,7 +369,7 @@ export async function rejectRequirement(req: Request, res: Response) {
   try {
     const data = await AdminService.rejectRequirement(
       String(req.params.id),
-      ADMIN_ID,
+      req.adminId!,
       req.body.reason,
     );
 
@@ -389,7 +387,7 @@ export async function rejectRequirement(req: Request, res: Response) {
 
 export async function convertRequirement(req: Request, res: Response) {
   try {
-    const data = await AdminService.convertRequirementToJobOrder(String(req.params.id), ADMIN_ID);
+    const data = await AdminService.convertRequirementToJobOrder(String(req.params.id), req.adminId!);
 
     return res.json({
       success: true,
