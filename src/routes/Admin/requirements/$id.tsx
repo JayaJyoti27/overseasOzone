@@ -119,16 +119,63 @@ function RequirementDetails() {
             <Info label="Sector" value={requirement.sector} />
             <Info label="Headcount" value={requirement.headcount} />
             <Info label="Timeline" value={requirement.timeline} />
+            <Info label="Contract Duration" value={requirement.contract_duration} />
+            <Info label="Working Hours" value={requirement.working_hours} />
           </div>
         </Panel>
 
-        <Panel title="Details">
+        <Panel title="Compensation & Benefits">
+          <div className="space-y-3">
+            <Info
+              label="Salary Range"
+              value={
+                requirement.salary_min || requirement.salary_max
+                  ? `${requirement.salary_min ?? "-"} - ${requirement.salary_max ?? "-"} ${requirement.currency ?? ""}`
+                  : undefined
+              }
+            />
+            <Info label="Accommodation" value={requirement.accommodation ? "Provided" : "Not provided"} />
+            <Info label="Transport" value={requirement.transport ? "Provided" : "Not provided"} />
+            <Info label="Food" value={requirement.food ? "Provided" : "Not provided"} />
+            <Info label="Other Benefits" value={requirement.benefits ?? "—"} />
+          </div>
+        </Panel>
+
+        <Panel title="Point of Contact">
           <div className="space-y-3">
             <Info label="Submitted By" value={requirement.company_name} />
             <Info label="Submitted On" value={requirement.created_at} />
-            <Info label="Notes" value={requirement.notes ?? "—"} />
+            <Info label="Contact Person" value={requirement.contact_person} />
+            <Info label="Contact Email" value={requirement.contact_email} />
+            <Info label="Contact Phone" value={requirement.contact_phone} />
           </div>
         </Panel>
+      </div>
+
+      {(requirement.job_description || requirement.qualifications || requirement.message) && (
+        <div className="relative grid gap-6 lg:grid-cols-3">
+          {requirement.job_description && (
+            <Panel title="Job Description">
+              <p className="whitespace-pre-wrap text-sm text-ink">{requirement.job_description}</p>
+            </Panel>
+          )}
+
+          {requirement.qualifications && (
+            <Panel title="Required Qualifications">
+              <p className="whitespace-pre-wrap text-sm text-ink">{requirement.qualifications}</p>
+            </Panel>
+          )}
+
+          {requirement.message && (
+            <Panel title="Additional Notes">
+              <p className="whitespace-pre-wrap text-sm text-ink">{requirement.message}</p>
+            </Panel>
+          )}
+        </div>
+      )}
+
+      <div className="relative grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2" />
 
         <Panel title="Actions">
           <div className="space-y-3">

@@ -62,6 +62,7 @@ import { Route as CandidatesDeploymentRouteImport } from './routes/Candidates/de
 import { Route as CandidatesDashboardRouteImport } from './routes/Candidates/dashboard'
 import { Route as CandidatesApplicationsRouteImport } from './routes/Candidates/applications'
 import { Route as AdminDashboardRouteImport } from './routes/Admin/dashboard'
+import { Route as EmployerJobOrdersIndexRouteImport } from './routes/Employer/job-orders.index'
 import { Route as AdminSettingsIndexRouteImport } from './routes/Admin/settings/index'
 import { Route as AdminRequirementsIndexRouteImport } from './routes/Admin/requirements/index'
 import { Route as AdminReportsIndexRouteImport } from './routes/Admin/reports/index'
@@ -349,6 +350,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const EmployerJobOrdersIndexRoute = EmployerJobOrdersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EmployerJobOrdersRoute,
+} as any)
 const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -528,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/Admin/reports/': typeof AdminReportsIndexRoute
   '/Admin/requirements/': typeof AdminRequirementsIndexRoute
   '/Admin/settings/': typeof AdminSettingsIndexRoute
+  '/Employer/job-orders/': typeof EmployerJobOrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -565,7 +572,6 @@ export interface FileRoutesByTo {
   '/Employer/dashboard': typeof EmployerDashboardRoute
   '/Employer/deployment': typeof EmployerDeploymentRouteWithChildren
   '/Employer/interviews': typeof EmployerInterviewsRouteWithChildren
-  '/Employer/job-orders': typeof EmployerJobOrdersRouteWithChildren
   '/Employer/notifications': typeof EmployerNotificationsRoute
   '/Employer/pending-approval': typeof EmployerPendingApprovalRoute
   '/Employer/register': typeof EmployerRegisterRoute
@@ -603,6 +609,7 @@ export interface FileRoutesByTo {
   '/Admin/reports': typeof AdminReportsIndexRoute
   '/Admin/requirements': typeof AdminRequirementsIndexRoute
   '/Admin/settings': typeof AdminSettingsIndexRoute
+  '/Employer/job-orders': typeof EmployerJobOrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -679,6 +686,7 @@ export interface FileRoutesById {
   '/Admin/reports/': typeof AdminReportsIndexRoute
   '/Admin/requirements/': typeof AdminRequirementsIndexRoute
   '/Admin/settings/': typeof AdminSettingsIndexRoute
+  '/Employer/job-orders/': typeof EmployerJobOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -756,6 +764,7 @@ export interface FileRouteTypes {
     | '/Admin/reports/'
     | '/Admin/requirements/'
     | '/Admin/settings/'
+    | '/Employer/job-orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -793,7 +802,6 @@ export interface FileRouteTypes {
     | '/Employer/dashboard'
     | '/Employer/deployment'
     | '/Employer/interviews'
-    | '/Employer/job-orders'
     | '/Employer/notifications'
     | '/Employer/pending-approval'
     | '/Employer/register'
@@ -831,6 +839,7 @@ export interface FileRouteTypes {
     | '/Admin/reports'
     | '/Admin/requirements'
     | '/Admin/settings'
+    | '/Employer/job-orders'
   id:
     | '__root__'
     | '/'
@@ -906,6 +915,7 @@ export interface FileRouteTypes {
     | '/Admin/reports/'
     | '/Admin/requirements/'
     | '/Admin/settings/'
+    | '/Employer/job-orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1315,6 +1325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/Employer/job-orders/': {
+      id: '/Employer/job-orders/'
+      path: '/'
+      fullPath: '/Employer/job-orders/'
+      preLoaderRoute: typeof EmployerJobOrdersIndexRouteImport
+      parentRoute: typeof EmployerJobOrdersRoute
+    }
     '/Admin/settings/': {
       id: '/Admin/settings/'
       path: '/settings'
@@ -1552,11 +1569,13 @@ const EmployerInterviewsRouteWithChildren =
 interface EmployerJobOrdersRouteChildren {
   EmployerJobOrdersJobIdRoute: typeof EmployerJobOrdersJobIdRoute
   EmployerJobOrdersNewRoute: typeof EmployerJobOrdersNewRoute
+  EmployerJobOrdersIndexRoute: typeof EmployerJobOrdersIndexRoute
 }
 
 const EmployerJobOrdersRouteChildren: EmployerJobOrdersRouteChildren = {
   EmployerJobOrdersJobIdRoute: EmployerJobOrdersJobIdRoute,
   EmployerJobOrdersNewRoute: EmployerJobOrdersNewRoute,
+  EmployerJobOrdersIndexRoute: EmployerJobOrdersIndexRoute,
 }
 
 const EmployerJobOrdersRouteWithChildren =

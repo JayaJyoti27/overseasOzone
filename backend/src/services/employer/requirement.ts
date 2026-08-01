@@ -103,6 +103,20 @@ export async function createRequirement(
     headcount: number;
     timeline: string;
     message?: string;
+    contact_person?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    salary_min?: number;
+    salary_max?: number;
+    currency?: string;
+    contract_duration?: string;
+    working_hours?: string;
+    accommodation?: boolean;
+    transport?: boolean;
+    food?: boolean;
+    job_description?: string;
+    qualifications?: string;
+    benefits?: string;
   },
 ) {
   const { data, error } = await supabase
@@ -123,6 +137,34 @@ export async function createRequirement(
       timeline: payload.timeline,
 
       message: payload.message ?? null,
+
+      contact_person: payload.contact_person ?? null,
+
+      contact_email: payload.contact_email ?? null,
+
+      contact_phone: payload.contact_phone ?? null,
+
+      salary_min: payload.salary_min ?? null,
+
+      salary_max: payload.salary_max ?? null,
+
+      currency: payload.currency ?? null,
+
+      contract_duration: payload.contract_duration ?? null,
+
+      working_hours: payload.working_hours ?? null,
+
+      accommodation: payload.accommodation ?? false,
+
+      transport: payload.transport ?? false,
+
+      food: payload.food ?? false,
+
+      job_description: payload.job_description ?? null,
+
+      qualifications: payload.qualifications ?? null,
+
+      benefits: payload.benefits ?? null,
 
       status: "submitted",
     })
@@ -164,6 +206,20 @@ export async function updateRequirement(
     headcount: number;
     timeline: string;
     message: string;
+    contact_person: string;
+    contact_email: string;
+    contact_phone: string;
+    salary_min: number;
+    salary_max: number;
+    currency: string;
+    contract_duration: string;
+    working_hours: string;
+    accommodation: boolean;
+    transport: boolean;
+    food: boolean;
+    job_description: string;
+    qualifications: string;
+    benefits: string;
   }>,
 ) {
   const { data: requirement } = await supabase

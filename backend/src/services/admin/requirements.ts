@@ -263,6 +263,28 @@ export async function convertRequirementToJobOrder(requirementId: string, adminI
 
       vacancies: requirement.headcount,
 
+      salary_min: requirement.salary_min ?? null,
+
+      salary_max: requirement.salary_max ?? null,
+
+      currency: requirement.currency ?? null,
+
+      contract_duration: requirement.contract_duration ?? null,
+
+      working_hours: requirement.working_hours ?? null,
+
+      accommodation: requirement.accommodation ?? false,
+
+      transport: requirement.transport ?? false,
+
+      food: requirement.food ?? false,
+
+      job_description: requirement.job_description ?? null,
+
+      requirements: requirement.qualifications ?? null,
+
+      benefits: requirement.benefits ?? null,
+
       status: "requirement_submitted",
     })
     .select()
