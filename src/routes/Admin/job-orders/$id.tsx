@@ -1,8 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getJobOrder, openRecruitment, closeRecruitment } from "@/lib/admin/api";
+import {
+  getJobOrder,
+  startAdminReview,
+  requestJobOrderClarification,
+  sendForEmployerApproval,
+  startLegalization,
+  approveForRecruitment,
+  openRecruitment,
+  closeRecruitment,
+} from "@/lib/admin/api";
+import {
+  statusLabel,
+  statusStyle,
+  getAvailableActions,
+  type JobOrderAction,
+} from "@/lib/admin/jobOrderStatus";
+import { JobOrderTimeline } from "@/components/Admin/JobOrders/JobOrderTimeline";
 
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { DotGrid } from "@/components/site/decor";
 
@@ -10,22 +35,14 @@ export const Route = createFileRoute("/Admin/job-orders/$id")({
   component: JobOrderDetails,
 });
 
-const STATUS_STYLES: Record<string, string> = {
-  open: "bg-emerald-50 text-emerald-700",
-  active: "bg-emerald-50 text-emerald-700",
-  closed: "bg-red-50 text-red-700",
-  pending: "bg-amber-50 text-amber-700",
-};
-
 function StatusPill({ status }: { status?: string }) {
-  const key = (status || "").toLowerCase();
   return (
     <span
-      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
-        STATUS_STYLES[key] ?? "bg-blue-wash text-blue"
-      }`}
+      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${statusStyle(
+        status,
+      )}`}
     >
-      {status || "-"}
+      {statusLabel(status)}
     </span>
   );
 }
@@ -39,11 +56,26 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
+const ACTION_HANDLERS: Record<
+  Exclude<JobOrderAction, "requestClarification">,
+  (id: string) => Promise<unknown>
+> = {
+  startAdminReview,
+  sendForEmployerApproval,
+  startLegalization,
+  approveForRecruitment,
+  openRecruitment,
+  closeRecruitment,
+};
+
 function JobOrderDetails() {
   const { id } = Route.useParams();
 
   const [loading, setLoading] = useState(true);
   const [job, setJob] = useState<any>();
+  const [actionPending, setActionPending] = useState<string | null>(null);
+  const [clarificationOpen, setClarificationOpen] = useState(false);
+  const [clarificationNotes, setClarificationNotes] = useState("");
 
   useEffect(() => {
     load();
@@ -60,14 +92,31 @@ function JobOrderDetails() {
     }
   }
 
-  async function open() {
-    await openRecruitment(id);
-    load();
+  async function runAction(action: JobOrderAction) {
+    if (action === "requestClarification") {
+      setClarificationOpen(true);
+      return;
+    }
+
+    setActionPending(action);
+    try {
+      await ACTION_HANDLERS[action](id);
+      await load();
+    } finally {
+      setActionPending(null);
+    }
   }
 
-  async function close() {
-    await closeRecruitment(id);
-    load();
+  async function submitClarification() {
+    setActionPending("requestClarification");
+    try {
+      await requestJobOrderClarification(id, clarificationNotes);
+      setClarificationOpen(false);
+      setClarificationNotes("");
+      await load();
+    } finally {
+      setActionPending(null);
+    }
   }
 
   if (loading || !job)
@@ -78,14 +127,7 @@ function JobOrderDetails() {
       </div>
     );
 
-  const stages = [
-    { title: "Applications", value: job.applications ?? 0 },
-    { title: "Shortlisted", value: job.shortlisted ?? 0 },
-    { title: "Interviewed", value: job.interviewed ?? 0 },
-    { title: "Selected", value: job.selected ?? 0 },
-    { title: "Deployed", value: job.deployed ?? 0 },
-  ];
-  const maxStage = Math.max(1, ...stages.map((s) => s.value));
+  const availableActions = getAvailableActions(job.status);
 
   return (
     <div className="relative space-y-6">
@@ -96,51 +138,64 @@ function JobOrderDetails() {
           <span className="text-xs font-semibold uppercase tracking-widest text-blue">
             Job Order
           </span>
-          <h1 className="mt-1 font-display text-3xl font-bold text-navy">{job.role}</h1>
-          <p className="mt-1 text-ink">{job.company_name}</p>
+          <h1 className="mt-1 font-display text-3xl font-bold text-navy">{job.title}</h1>
+          <p className="mt-1 text-ink">{job.employer?.company_name}</p>
         </div>
 
         <StatusPill status={job.status} />
       </div>
 
+      <JobOrderTimeline status={job.status} />
+
       <div className="relative grid gap-6 lg:grid-cols-3">
         <Panel title="Job Information">
           <div className="space-y-3">
-            <Info label="Role" value={job.role} />
+            <Info label="Title" value={job.title} />
+            <Info label="Category" value={job.category} />
             <Info label="Country" value={job.country} />
-            <Info label="Sector" value={job.sector} />
-            <Info label="Openings" value={job.headcount} />
-            <Info label="Timeline" value={job.timeline} />
+            <Info label="Vacancies" value={job.vacancies} />
+            <Info label="Contract Duration" value={job.contract_duration} />
           </div>
         </Panel>
 
-        <Panel title="Recruitment Progress">
-          <div className="space-y-4">
-            {stages.map((s) => (
-              <div key={s.title}>
-                <div className="mb-1.5 flex items-center justify-between text-sm">
-                  <span className="text-navy">{s.title}</span>
-                  <span className="font-semibold text-navy">{s.value}</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-blue-wash">
-                  <div
-                    className="h-full rounded-full bg-blue transition-all"
-                    style={{ width: `${(s.value / maxStage) * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+        <Panel title="Employer">
+          <div className="space-y-3">
+            <Info label="Company" value={job.employer?.company_name} />
+            <Info label="Contact Person" value={job.employer?.contact_person} />
+            <Info label="Email" value={job.employer?.email} />
           </div>
         </Panel>
 
         <Panel title="Actions">
           <div className="space-y-3">
-            <Button className="w-full rounded-full bg-navy hover:bg-blue" onClick={open}>
-              Open Recruitment
-            </Button>
-            <Button variant="destructive" className="w-full rounded-full" onClick={close}>
-              Close Recruitment
-            </Button>
+            {availableActions.length === 0 ? (
+              <p className="text-sm text-ink">
+                No admin actions are available while this job order is in the{" "}
+                <span className="font-medium text-navy">{statusLabel(job.status)}</span> status.
+              </p>
+            ) : (
+              availableActions.map((a) => (
+                <Button
+                  key={a.action}
+                  variant={a.variant === "destructive" ? "destructive" : "default"}
+                  className={`w-full rounded-full ${
+                    a.variant === "secondary"
+                      ? "border border-border bg-white text-navy hover:bg-blue-wash"
+                      : a.variant !== "destructive"
+                        ? "bg-navy hover:bg-blue"
+                        : ""
+                  }`}
+                  disabled={actionPending !== null}
+                  onClick={() => runAction(a.action)}
+                >
+                  {actionPending === a.action ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    a.label
+                  )}
+                </Button>
+              ))
+            )}
           </div>
         </Panel>
       </div>
@@ -167,6 +222,41 @@ function JobOrderDetails() {
           </div>
         )}
       </Panel>
+
+      <Dialog open={clarificationOpen} onOpenChange={setClarificationOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Employer Clarification</DialogTitle>
+            <DialogDescription>
+              Explain what the employer needs to clarify or correct. This note is saved to the job
+              order and shown to the employer.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Textarea
+            value={clarificationNotes}
+            onChange={(e) => setClarificationNotes(e.target.value)}
+            placeholder="e.g. Please confirm the accommodation arrangement for this role."
+            rows={4}
+          />
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClarificationOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitClarification}
+              disabled={!clarificationNotes.trim() || actionPending === "requestClarification"}
+            >
+              {actionPending === "requestClarification" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Send Request"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

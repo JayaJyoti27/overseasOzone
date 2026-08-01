@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { getJobOrders, openRecruitment, closeRecruitment } from "@/lib/admin/api";
+import { getJobOrders } from "@/lib/admin/api";
+import { statusLabel, statusStyle } from "@/lib/admin/jobOrderStatus";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,28 +12,20 @@ export const Route = createFileRoute("/Admin/job-orders/")({
   component: JobOrdersPage,
 });
 
-const STATUS_STYLES: Record<string, string> = {
-  open: "bg-emerald-50 text-emerald-700",
-  active: "bg-emerald-50 text-emerald-700",
-  closed: "bg-red-50 text-red-700",
-  pending: "bg-amber-50 text-amber-700",
-};
-
 function StatusPill({ status }: { status?: string }) {
-  const key = (status || "").toLowerCase();
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
-        STATUS_STYLES[key] ?? "bg-blue-wash text-blue"
-      }`}
+      className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${statusStyle(
+        status,
+      )}`}
     >
-      {status || "-"}
+      {statusLabel(status)}
     </span>
   );
 }
 
 // header + every row share this grid so columns always line up and fill width
-const GRID_COLS = "grid-cols-[1.2fr_1.1fr_0.9fr_0.8fr_0.9fr_1.3fr]";
+const GRID_COLS = "grid-cols-[1.2fr_1.1fr_0.9fr_0.8fr_1.2fr_0.6fr]";
 
 function JobOrdersPage() {
   const navigate = useNavigate();
@@ -54,16 +47,6 @@ function JobOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function open(id: string) {
-    await openRecruitment(id);
-    loadOrders();
-  }
-
-  async function close(id: string) {
-    await closeRecruitment(id);
-    loadOrders();
   }
 
   const filtered = useMemo(() => {
@@ -115,12 +98,12 @@ function JobOrdersPage() {
         {/* header row */}
         <div className={`grid ${GRID_COLS} gap-2 border-b border-border bg-blue-wash/50 px-6 py-4`}>
           <span className="text-xs font-semibold uppercase tracking-wide text-navy">Employer</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Role</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Title</span>
           <span className="text-xs font-semibold uppercase tracking-wide text-navy">Country</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Openings</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Vacancies</span>
           <span className="text-xs font-semibold uppercase tracking-wide text-navy">Status</span>
           <span className="text-right text-xs font-semibold uppercase tracking-wide text-navy">
-            Actions
+            &nbsp;
           </span>
         </div>
 
@@ -139,31 +122,21 @@ function JobOrdersPage() {
               className={`grid ${GRID_COLS} cursor-pointer items-center gap-2 border-b border-border px-6 py-4 transition last:border-0 hover:bg-blue-wash/40`}
               onClick={() => navigate({ to: `/Admin/job-orders/${job.id}` })}
             >
-              <span className="truncate font-medium text-navy">{job.company_name}</span>
-              <span className="truncate text-ink">{job.role}</span>
+              <span className="truncate font-medium text-navy">{job.employer?.company_name}</span>
+              <span className="truncate text-ink">{job.title}</span>
               <span className="truncate text-ink">{job.country}</span>
-              <span className="truncate text-ink">{job.headcount}</span>
+              <span className="truncate text-ink">{job.vacancies}</span>
               <span>
                 <StatusPill status={job.status} />
               </span>
-              <div
-                className="flex items-center justify-end gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
                 <Button
                   size="sm"
-                  className="rounded-full bg-navy px-3 text-xs hover:bg-blue"
-                  onClick={() => open(job.id)}
-                >
-                  Open
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
+                  variant="outline"
                   className="rounded-full px-3 text-xs"
-                  onClick={() => close(job.id)}
+                  onClick={() => navigate({ to: `/Admin/job-orders/${job.id}` })}
                 >
-                  Close
+                  View
                 </Button>
               </div>
             </div>
