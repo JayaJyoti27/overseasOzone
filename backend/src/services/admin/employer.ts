@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { createNotification } from "./notifications";
 
 interface EmployerFilters {
   page?: number;
@@ -113,7 +114,7 @@ export async function getEmployerDocuments(employerId: string) {
       `
       id,
       document_type,
-      file_name,
+      name,
       file_url,
       status,
       expiry_date,
@@ -169,6 +170,16 @@ export async function approveEmployer(employerId: string, adminId: string) {
     .single();
 
   if (error) throw new DatabaseError("Unable to approve employer.", error);
+
+  await createNotification({
+    user_id: employerId,
+    user_type: "employer",
+    title: "You're approved!",
+    message: `${data.company_name || "Your company"} has been approved. Complete your profile to start posting requirements.`,
+    type: "employer_approved",
+    related_entity: "employer",
+    related_entity_id: employerId,
+  });
 
   return data;
 }

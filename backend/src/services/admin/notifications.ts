@@ -80,6 +80,7 @@ export async function getNotification(id: string) {
 
 export async function createNotification(payload: {
   user_id: string;
+  user_type?: string;
   title: string;
   message: string;
   type: string;

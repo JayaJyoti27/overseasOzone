@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Briefcase, Users, CalendarDays, Plane, AlertCircle } from "lucide-react";
+import { Briefcase, Users, CalendarDays, Plane, AlertCircle, Sparkles } from "lucide-react";
 
 import { StatCard } from "@/components/Employer/Dashboard/StatCard";
 import { RecruitmentPipeline } from "@/components/Employer/Dashboard/RecruitmentPipeline";
@@ -59,13 +59,28 @@ function EmployerDashboard() {
 
           {dashboard?.employer && (
             <p className="mt-2 text-sm text-muted-foreground">
-              Logged in as {dashboard.employer.companyName}
+              Logged in as {dashboard.employer.company_name}
             </p>
           )}
         </div>
 
         <Button>Create Job Order</Button>
       </div>
+
+      {!loading && !error && dashboard?.employer && !dashboard.employer.industry && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-amber-600" size={18} />
+            <p className="text-sm text-amber-800">
+              You're approved! Add your industry, HR contact, and branches to finish setting up
+              your company profile.
+            </p>
+          </div>
+          <Button asChild size="sm">
+            <Link to="/Employer/company">Complete Profile</Link>
+          </Button>
+        </div>
+      )}
 
       {loading && <p>Loading dashboard...</p>}
 

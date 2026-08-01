@@ -169,7 +169,7 @@ function EmployerDetails() {
                     <h4 className="font-semibold text-navy">
                       {doc.document_type || "Company Certificate"}
                     </h4>
-                    <p className="text-sm text-ink">{doc.file_name}</p>
+                    <p className="text-sm text-ink">{doc.name}</p>
                   </div>
                 </div>
                 <StatusPill status={doc.status} />
