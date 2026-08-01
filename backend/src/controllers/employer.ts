@@ -128,7 +128,10 @@ export async function getProfile(req: Request, res: Response) {
 
 export async function updateProfile(req: Request, res: Response) {
   try {
-    const data = await EmployerService.updateEmployerProfile(req.employerId!, req.body);
+    const data = await EmployerService.updateEmployerProfile(req.employerId!, {
+      ...req.body,
+      email: req.body?.email ?? req.authUserEmail,
+    });
     return res.json({ success: true, data });
   } catch (err: any) {
     console.error("updateProfile error:", err); // add this

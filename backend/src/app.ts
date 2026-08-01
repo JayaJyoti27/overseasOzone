@@ -46,4 +46,24 @@ app.use((_req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Global Error Handler
+|--------------------------------------------------------------------------
+| Must be registered LAST, after all routes and the 404 handler, and must
+| take all 4 params (err, req, res, next) so Express recognizes it as an
+| error handler. Without this, errors passed via next(err) - e.g. multer's
+| fileFilter rejecting a file type, or file-size limit errors - fall
+| through to Express's default handler, which returns a raw HTML 500 page
+| instead of the JSON shape the frontend expects.
+*/
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("Unhandled error:", err);
+
+  res.status(err.status || err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Something went wrong.",
+  });
+});
+
 export default app;

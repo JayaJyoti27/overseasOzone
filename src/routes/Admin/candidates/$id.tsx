@@ -3,25 +3,9 @@ import { useEffect, useState } from "react";
 
 import { getCandidate, activateCandidate, suspendCandidate } from "@/lib/admin/api";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, Circle, FileX } from "lucide-react";
+import { Loader2, Download, Circle } from "lucide-react";
 import { DotGrid } from "@/components/site/decor";
-
-const DOCUMENT_LABELS: Record<string, string> = {
-  passport: "Passport",
-  resume: "Resume",
-  aadhaar: "Aadhaar",
-  pan: "PAN Card",
-  degree_certificate: "Degree Certificate",
-  experience_certificate: "Experience Certificate",
-  medical_certificate: "Medical Certificate",
-  police_clearance_certificate: "Police Clearance Certificate",
-  offer_letter: "Offer Letter",
-  employment_contract: "Employment Contract",
-  visa_application: "Visa Application",
-  visa: "Visa",
-  photo: "Photo",
-  other: "Other",
-};
+import { DocumentChecklistCard } from "@/components/Admin/candidates/DocumentChecklistCard";
 
 export const Route = createFileRoute("/Admin/candidates/$id")({
   component: CandidateDetails,
@@ -71,8 +55,10 @@ function CandidateDetails() {
     setLoading(true);
 
     try {
+      // lib/admin/api.ts#getCandidate already unwraps { data: { candidate, ... } }
+      // and spreads candidate's fields to the top level - use the result as-is.
       const data = await getCandidate(id);
-      setCandidate(data.data ?? data);
+      setCandidate(data);
     } finally {
       setLoading(false);
     }
@@ -98,14 +84,14 @@ function CandidateDetails() {
 
   return (
     <div className="relative space-y-6">
-      <DotGrid className="right-0 top-0 h-20 w-20 opacity-60" />
+      <DotGrid className="right-0 top-0 h-20 w-20 opacity-60 m-4" />
 
       <div className="relative flex items-center justify-between">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-widest text-blue">
+          <span className="text-xs font-semibold uppercase tracking-widest text-blue ml-4">
             Candidate Profile
           </span>
-          <h1 className="mt-1 font-display text-3xl font-bold text-navy">
+          <h1 className="mt-1 font-display text-3xl font-bold text-navy ml-4">
             {candidate.full_name}
           </h1>
         </div>
@@ -115,7 +101,7 @@ function CandidateDetails() {
 
       <div className="relative grid gap-6 lg:grid-cols-3">
         {/* LEFT */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2 ml-4">
           <Panel title="Personal Information">
             <div className="grid grid-cols-2 gap-4">
               <Info label="Name" value={candidate.full_name} />
@@ -136,7 +122,7 @@ function CandidateDetails() {
           </Panel>
 
           <Panel title="Skills">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 ml-4">
               {candidate.skills?.length ? (
                 candidate.skills.map((skill: string) => (
                   <span
@@ -154,7 +140,7 @@ function CandidateDetails() {
 
           <Panel title="Applications">
             {!candidate.applications?.length && (
-              <p className="text-sm text-ink">No applications yet.</p>
+              <p className="text-sm text-ink ml-4">No applications yet.</p>
             )}
 
             <div className="space-y-3">
@@ -177,20 +163,7 @@ function CandidateDetails() {
         {/* RIGHT */}
         <div className="space-y-6">
           <Panel title="Documents">
-            <div className="space-y-3">
-              {!candidate.documents?.length && (
-                <p className="text-sm text-ink">No documents uploaded yet.</p>
-              )}
-
-              {candidate.documents?.map((doc: any) => (
-                <DocumentButton
-                  key={doc.id}
-                  title={DOCUMENT_LABELS[doc.document_type] ?? doc.document_type}
-                  url={doc.public_url}
-                  status={doc.status}
-                />
-              ))}
-            </div>
+            <DocumentChecklistCard documents={candidate.documents ?? []} />
           </Panel>
 
           <Panel title="Actions">
@@ -252,47 +225,5 @@ function Status({ title }: any) {
         Pending
       </span>
     </div>
-  );
-}
-
-function DocumentButton({
-  title,
-  url,
-  status,
-}: {
-  title: string;
-  url?: string;
-  status?: string;
-}) {
-  if (!url) {
-    return (
-      <div className="flex w-full items-center justify-between rounded-full border border-dashed border-border px-4 py-2 text-sm text-ink/60">
-        <span className="flex items-center gap-2">
-          <FileX size={16} />
-          {title}
-        </span>
-        <span className="text-xs">Not uploaded</span>
-      </div>
-    );
-  }
-
-  return (
-    <Button
-      asChild
-      variant="outline"
-      className="w-full justify-between rounded-full border-border hover:border-blue hover:text-blue"
-    >
-      <a href={url} target="_blank" rel="noopener noreferrer" download>
-        <span className="flex items-center gap-2">
-          {title}
-          {status && (
-            <span className="rounded-full bg-blue-wash px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue">
-              {status}
-            </span>
-          )}
-        </span>
-        <Download size={16} />
-      </a>
-    </Button>
   );
 }

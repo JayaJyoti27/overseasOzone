@@ -14,7 +14,7 @@ export async function getEmployerDocuments(employerId: string) {
       `
       id,
       document_type,
-      file_name,
+      name,
       file_url,
       status,
       expiry_date,
@@ -51,7 +51,7 @@ export async function uploadEmployerDocument(
     .insert({
       employer_id: employerId,
       document_type: payload.document_type,
-      file_name: payload.file_name,
+      name: payload.file_name,
       file_url: payload.file_url,
       status: "pending",
       uploaded_at: new Date().toISOString(),

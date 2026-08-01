@@ -4,9 +4,26 @@ import { getCurrentProfile, supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/Employer")({
   beforeLoad: async ({ location }) => {
+    const isRegisterPage = location.pathname === "/Employer/register";
+    const isPendingPage = location.pathname === "/Employer/pending-approval";
+
+    // Supabase's session lives in the browser (localStorage) and isn't
+    // available during SSR. Skip the auth check entirely on the server —
+    // the real check runs once this executes client-side.
+    if (typeof window === "undefined") {
+      return {};
+    }
+
     const profile = await getCurrentProfile();
 
     if (!profile || profile.role !== "employer") {
+      // /register and /pending-approval are only ever reached right after
+      // an authenticated action (email verification, form submit). Don't
+      // re-litigate "are you logged in" on these two pages — just let them
+      // load instead of bouncing to /Login.
+      if (isRegisterPage || isPendingPage) {
+        return { profile: null };
+      }
       throw redirect({ to: "/Login" });
     }
 
@@ -22,11 +39,9 @@ export const Route = createFileRoute("/Employer")({
       .eq("employer_id", profile.id)
       .limit(1);
 
-    const isRegisterPage = location.pathname === "/Employer/register";
-    const isPendingPage = location.pathname === "/Employer/pending-approval";
-
     const isIncomplete =
       !employer || !employer.company_name || !documents || documents.length === 0;
+    console.log("[EmployerGuard]", { employer, documents, isIncomplete });
 
     if (isIncomplete) {
       if (!isRegisterPage) {

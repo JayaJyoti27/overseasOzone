@@ -19,6 +19,11 @@ import {
   getJobOrders,
   getJobOrder,
   updateJobOrder,
+  startAdminReview,
+  requestJobOrderClarification,
+  sendForEmployerApproval,
+  startLegalization,
+  approveForRecruitment,
   openRecruitment,
   closeRecruitment,
 } from "../controllers/admin";
@@ -97,6 +102,16 @@ router.get("/job-orders", getJobOrders);
 router.get("/job-orders/:id", getJobOrder);
 
 router.patch("/job-orders/:id", updateJobOrder);
+
+router.patch("/job-orders/:id/review", startAdminReview);
+
+router.patch("/job-orders/:id/clarification", requestJobOrderClarification);
+
+router.patch("/job-orders/:id/send-for-approval", sendForEmployerApproval);
+
+router.patch("/job-orders/:id/start-legalization", startLegalization);
+
+router.patch("/job-orders/:id/approve-for-recruitment", approveForRecruitment);
 
 router.patch("/job-orders/:id/open", openRecruitment);
 

@@ -16,12 +16,16 @@ export const upload = multer({
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "image/png",
       "image/jpeg",
+      "image/jpg", // some browsers/OSes send this non-standard mimetype for JPEGs
+      "image/webp",
+      "image/heic",
+      "image/heif", // common for photos taken directly on iPhone
     ];
 
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only PDF, Word, PNG, or JPG files are allowed."));
+      cb(new Error(`Unsupported file type "${file.mimetype}". Allowed: PDF, Word, PNG, JPG, WEBP, HEIC.`));
     }
   },
 });

@@ -494,9 +494,103 @@ export async function updateJobOrder(req: Request, res: Response) {
   }
 }
 
+export async function startAdminReview(req: Request, res: Response) {
+  try {
+    const data = await AdminService.startAdminReview(String(req.params.id), req.adminId!);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function requestJobOrderClarification(req: Request, res: Response) {
+  try {
+    const data = await AdminService.requestJobOrderClarification(
+      String(req.params.id),
+      req.adminId!,
+      req.body.notes,
+    );
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function sendForEmployerApproval(req: Request, res: Response) {
+  try {
+    const data = await AdminService.sendForEmployerApproval(String(req.params.id), req.adminId!);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function startLegalization(req: Request, res: Response) {
+  try {
+    const data = await AdminService.startLegalization(String(req.params.id), req.adminId!);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function approveForRecruitment(req: Request, res: Response) {
+  try {
+    const data = await AdminService.approveForRecruitment(String(req.params.id), req.adminId!);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
 export async function openRecruitment(req: Request, res: Response) {
   try {
-    const data = await AdminService.openRecruitment(String(req.params.id));
+    const data = await AdminService.openRecruitment(String(req.params.id), req.adminId!);
 
     return res.json({
       success: true,
@@ -514,7 +608,7 @@ export async function openRecruitment(req: Request, res: Response) {
 
 export async function closeRecruitment(req: Request, res: Response) {
   try {
-    const data = await AdminService.closeRecruitment(String(req.params.id));
+    const data = await AdminService.closeRecruitment(String(req.params.id), req.adminId!);
 
     return res.json({
       success: true,

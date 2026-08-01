@@ -1,5 +1,5 @@
 import { supabase } from "../../config/supabase";
-import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
 
 interface JobOrderFilters {
   page?: number;
@@ -170,50 +170,198 @@ export async function updateJobOrder(
 }
 /*
 |--------------------------------------------------------------------------
-| Open Recruitment
+| Status Transition Guard
+|--------------------------------------------------------------------------
+| Shared by every workflow transition below: loads the current status,
+| rejects the move if it isn't a valid "from" state for that transition,
+| updates the row, and drops an activity_logs entry - same audit trail
+| pattern used by the Requirements module.
 |--------------------------------------------------------------------------
 */
 
-export async function openRecruitment(jobOrderId: string) {
+async function transitionJobOrderStatus(
+  jobOrderId: string,
+  allowedFrom: string[],
+  toStatus: string,
+  adminId: string,
+  action: string,
+  extra: Record<string, unknown> = {},
+) {
+  const { data: current, error: fetchError } = await supabase
+    .from("job_orders")
+    .select("status")
+    .eq("id", jobOrderId)
+    .single();
+
+  if (fetchError || !current) {
+    throw new NotFoundError("Job order not found.");
+  }
+
+  if (!allowedFrom.includes(current.status)) {
+    throw new ConflictError(
+      `Job order cannot move to "${toStatus}" from its current status ("${current.status}").`,
+    );
+  }
+
   const { data, error } = await supabase
     .from("job_orders")
     .update({
-      status: "recruitment_open",
+      status: toStatus,
 
       updated_at: new Date().toISOString(),
+
+      ...extra,
     })
     .eq("id", jobOrderId)
     .select()
     .single();
 
   if (error) {
-    throw new DatabaseError("Unable to open recruitment.", error);
+    throw new DatabaseError(`Unable to ${action.toLowerCase()}.`, error);
   }
+
+  await supabase.from("activity_logs").insert({
+    user_id: adminId,
+
+    action,
+
+    entity: "job_order",
+
+    entity_id: jobOrderId,
+  });
 
   return data;
 }
 
 /*
 |--------------------------------------------------------------------------
-| Close Recruitment
+| Start / Resume Admin Review
+|--------------------------------------------------------------------------
+| requirement_submitted -> under_admin_review
+| clarification_required -> under_admin_review (employer has responded)
 |--------------------------------------------------------------------------
 */
 
-export async function closeRecruitment(jobOrderId: string) {
-  const { data, error } = await supabase
-    .from("job_orders")
-    .update({
-      status: "recruitment_closed",
+export async function startAdminReview(jobOrderId: string, adminId: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["requirement_submitted", "clarification_required"],
+    "under_admin_review",
+    adminId,
+    "Job Order Review Started",
+  );
+}
 
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", jobOrderId)
-    .select()
-    .single();
+/*
+|--------------------------------------------------------------------------
+| Request Employer Clarification
+|--------------------------------------------------------------------------
+| under_admin_review -> clarification_required
+|--------------------------------------------------------------------------
+*/
 
-  if (error) {
-    throw new DatabaseError("Unable to close recruitment.", error);
-  }
+export async function requestJobOrderClarification(jobOrderId: string, adminId: string, notes: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["under_admin_review"],
+    "clarification_required",
+    adminId,
+    "Job Order Clarification Requested",
+    {
+      remarks: notes,
+    },
+  );
+}
 
-  return data;
+/*
+|--------------------------------------------------------------------------
+| Send For Employer Approval
+|--------------------------------------------------------------------------
+| under_admin_review -> employer_approval_pending
+|--------------------------------------------------------------------------
+*/
+
+export async function sendForEmployerApproval(jobOrderId: string, adminId: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["under_admin_review"],
+    "employer_approval_pending",
+    adminId,
+    "Sent For Employer Approval",
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Start Legalization
+|--------------------------------------------------------------------------
+| employer_approval_pending -> legalization_in_progress
+|--------------------------------------------------------------------------
+*/
+
+export async function startLegalization(jobOrderId: string, adminId: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["employer_approval_pending"],
+    "legalization_in_progress",
+    adminId,
+    "Legalization Started",
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Approve For Recruitment
+|--------------------------------------------------------------------------
+| legalization_in_progress -> approved_for_recruitment
+|--------------------------------------------------------------------------
+*/
+
+export async function approveForRecruitment(jobOrderId: string, adminId: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["legalization_in_progress"],
+    "approved_for_recruitment",
+    adminId,
+    "Approved For Recruitment",
+    {
+      approved_at: new Date().toISOString(),
+    },
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Open Recruitment
+|--------------------------------------------------------------------------
+| approved_for_recruitment -> recruitment_open
+|--------------------------------------------------------------------------
+*/
+
+export async function openRecruitment(jobOrderId: string, adminId: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["approved_for_recruitment"],
+    "recruitment_open",
+    adminId,
+    "Recruitment Opened",
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Close Recruitment
+|--------------------------------------------------------------------------
+| recruitment_open -> recruitment_closed
+|--------------------------------------------------------------------------
+*/
+
+export async function closeRecruitment(jobOrderId: string, adminId: string) {
+  return transitionJobOrderStatus(
+    jobOrderId,
+    ["recruitment_open"],
+    "recruitment_closed",
+    adminId,
+    "Recruitment Closed",
+  );
 }

@@ -34,7 +34,7 @@ export async function getCandidates(filters: CandidateFilters) {
   if (filters.search) {
     query = query.or(
       `
-      full_name.ilike.%${filters.search}%,
+      name.ilike.%${filters.search}%,
       email.ilike.%${filters.search}%,
       phone.ilike.%${filters.search}%
       `,
@@ -83,6 +83,18 @@ export async function getCandidate(candidateId: string) {
     throw new NotFoundError("Candidate not found.");
   }
 
+  // The `candidates` table's real column names (name, current_country,
+  // passport_expiry) don't match what the admin frontend expects
+  // (full_name, current_location, passport_expiry_date). Same translation
+  // as services/candidates/profile.ts#toApiShape - keep both in sync.
+  const { name, current_country, passport_expiry, ...restCandidate } = candidate;
+  const apiCandidate = {
+    ...restCandidate,
+    full_name: name,
+    current_location: current_country,
+    passport_expiry_date: passport_expiry,
+  };
+
   const { data: applications } = await supabase
     .from("applications")
     .select(
@@ -124,7 +136,7 @@ export async function getCandidate(candidateId: string) {
     });
 
   return {
-    candidate,
+    candidate: apiCandidate,
 
     applications: applications ?? [],
 

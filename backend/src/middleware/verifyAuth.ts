@@ -41,7 +41,8 @@ export async function verifyAuth(req: Request, res: Response, next: NextFunction
         message: "Invalid or expired session. Please log in again.",
       });
     }
-
+    req.authUserId = userData.user.id;
+    req.authUserEmail = userData.user.email ?? undefined;
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, role")
