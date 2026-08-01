@@ -103,7 +103,7 @@ export async function getEmployer(employerId: string) {
       `
         id,
         document_type,
-        file_name,
+        file_name:name,
         file_url,
         status,
         uploaded_at
@@ -213,7 +213,7 @@ export async function getEmployerDocuments(employerId: string) {
       `
         id,
         document_type,
-        file_name,
+        file_name:name,
         file_url,
         status,
         uploaded_at
