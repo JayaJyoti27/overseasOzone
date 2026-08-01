@@ -32,7 +32,6 @@ function EmployerRegisterPage() {
     try {
       console.log("[EmployerRegister] step 1: updateProfile");
       await updateProfile({ company_name: companyName.trim() });
-
       console.log("[EmployerRegister] step 2: uploadEmployerDocument");
       await uploadEmployerDocument(file, "company_verification");
 
