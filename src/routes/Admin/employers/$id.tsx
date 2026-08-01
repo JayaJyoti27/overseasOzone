@@ -1,14 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  getEmployer,
-  getEmployerDocuments,
-  approveEmployer,
-  suspendEmployer,
-  activateEmployer,
-} from "@/lib/admin/dashboard";
+import { getEmployer, suspendEmployer, activateEmployer } from "@/lib/admin/api";
+
 import { Button } from "@/components/ui/button";
-import { FileText, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { DotGrid } from "@/components/site/decor";
 
 export const Route = createFileRoute("/Admin/employers/$id")({
@@ -50,46 +45,54 @@ function EmployerDetails() {
 
   const [loading, setLoading] = useState(true);
   const [employer, setEmployer] = useState<any>(null);
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [actionPending, setActionPending] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     loadEmployer();
-    loadDocuments();
   }, [id]);
 
   async function loadEmployer() {
     setLoading(true);
+    setError(null);
 
     try {
       const data = await getEmployer(id);
-      setEmployer(data.data ?? data);
+      setEmployer(data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? "Unable to load this employer.");
     } finally {
       setLoading(false);
     }
   }
 
-  async function loadDocuments() {
+  async function suspend() {
+    setActionPending(true);
+    setActionError(null);
+
     try {
-      const data = await getEmployerDocuments(id);
-      setDocuments(data ?? []);
-    } catch {
-      setDocuments([]);
+      await suspendEmployer(id);
+      await loadEmployer();
+    } catch (err: any) {
+      setActionError(err?.response?.data?.message ?? "Unable to suspend this employer.");
+    } finally {
+      setActionPending(false);
     }
   }
 
-  async function approve() {
-    await approveEmployer(id);
-    loadEmployer();
-  }
-
-  async function suspend() {
-    await suspendEmployer(id);
-    loadEmployer();
-  }
-
   async function activate() {
-    await activateEmployer(id);
-    loadEmployer();
+    setActionPending(true);
+    setActionError(null);
+
+    try {
+      await activateEmployer(id);
+      await loadEmployer();
+    } catch (err: any) {
+      setActionError(err?.response?.data?.message ?? "Unable to activate this employer.");
+    } finally {
+      setActionPending(false);
+    }
   }
 
   if (loading) {
@@ -99,6 +102,10 @@ function EmployerDetails() {
         <p className="text-sm text-ink">Loading employer…</p>
       </div>
     );
+  }
+
+  if (error) {
+    return <p className="text-red-600">{error}</p>;
   }
 
   if (!employer) {
@@ -135,27 +142,31 @@ function EmployerDetails() {
 
         <Panel title="Actions">
           <div className="space-y-3">
-            <Button className="w-full rounded-full bg-navy hover:bg-blue" onClick={approve}>
-              Approve Employer
-            </Button>
             <Button
               variant="secondary"
               className="w-full rounded-full bg-blue-wash text-blue hover:bg-blue-soft"
               onClick={activate}
+              disabled={actionPending}
             >
-              Activate Employer
+              {actionPending ? "Working…" : "Activate Employer"}
             </Button>
-            <Button variant="destructive" className="w-full rounded-full" onClick={suspend}>
-              Suspend Employer
+            <Button
+              variant="destructive"
+              className="w-full rounded-full"
+              onClick={suspend}
+              disabled={actionPending}
+            >
+              {actionPending ? "Working…" : "Suspend Employer"}
             </Button>
+            {actionError && <p className="text-sm text-red-600">{actionError}</p>}
           </div>
         </Panel>
       </div>
 
-      <Panel title="Verification Documents">
-        {documents.length ? (
+      {employer.documents?.length ? (
+        <Panel title="Company Documents">
           <div className="space-y-3">
-            {documents.map((doc) => (
+            {employer.documents.map((doc: any) => (
               <a
                 key={doc.id}
                 href={doc.file_url}
@@ -163,23 +174,16 @@ function EmployerDetails() {
                 rel="noreferrer"
                 className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue"
               >
-                <div className="flex items-center gap-3">
-                  <FileText className="text-blue" size={18} />
-                  <div>
-                    <h4 className="font-semibold text-navy">
-                      {doc.document_type || "Company Certificate"}
-                    </h4>
-                    <p className="text-sm text-ink">{doc.name}</p>
-                  </div>
+                <div>
+                  <h4 className="font-semibold text-navy">{doc.file_name}</h4>
+                  <p className="text-sm text-ink">{doc.document_type}</p>
                 </div>
                 <StatusPill status={doc.status} />
               </a>
             ))}
           </div>
-        ) : (
-          <p className="text-sm text-ink">No documents uploaded yet.</p>
-        )}
-      </Panel>
+        </Panel>
+      ) : null}
 
       <Panel title="Submitted Requirements">
         {employer.requirements?.length ? (

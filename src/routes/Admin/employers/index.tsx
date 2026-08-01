@@ -1,12 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import {
-  getEmployers,
-  getEmployer,
-  approveEmployer,
-  suspendEmployer,
-  activateEmployer,
-} from "@/lib/admin/dashboard";
+
+import { getEmployers, suspendEmployer, activateEmployer } from "@/lib/admin/api";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, Building2, Inbox } from "lucide-react";
@@ -55,16 +51,15 @@ function EmployersPage() {
     setLoading(true);
 
     try {
-      const data = await getEmployers();
-      setEmployers(Array.isArray(data) ? data : (data.data ?? []));
+      const data = await getEmployers({ approvalStatus: "approved" });
+      const list = Array.isArray(data) ? data : (data?.data ?? []);
+      // Belt-and-braces: even if the backend filter changes, never show
+      // an employer that hasn't been approved yet on this page — pending
+      // ones are reviewed from Notifications instead.
+      setEmployers(list.filter((e: any) => e.approval_status === "approved"));
     } finally {
       setLoading(false);
     }
-  }
-
-  async function approve(id: string) {
-    await approveEmployer(id);
-    loadEmployers();
   }
 
   async function suspend(id: string) {
@@ -106,7 +101,9 @@ function EmployersPage() {
               <Building2 className="h-3.5 w-3.5" /> Employers
             </span>
             <h1 className="mt-3 font-display text-3xl font-bold text-navy">Employers</h1>
-            <p className="mt-1 text-ink">Manage all employers</p>
+            <p className="mt-1 text-ink">
+              Active employers only — new registrations are reviewed from Notifications.
+            </p>
           </div>
 
           <div className="relative w-80 max-w-full">
@@ -159,13 +156,6 @@ function EmployersPage() {
                 className="flex items-center justify-end gap-2"
                 onClick={(ev) => ev.stopPropagation()}
               >
-                <Button
-                  size="sm"
-                  className="rounded-full bg-navy px-3 text-xs hover:bg-blue"
-                  onClick={() => approve(e.id)}
-                >
-                  Approve
-                </Button>
                 <Button
                   size="sm"
                   variant="secondary"

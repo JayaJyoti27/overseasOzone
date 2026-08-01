@@ -56,10 +56,15 @@ export async function getEmployers(params?: Record<string, any>) {
   return res.data.employers;
 }
 
+export async function getPendingEmployers() {
+  const res = await api.get("/admin/employers/pending");
+  return res.data.data;
+}
+
 export async function getEmployer(id: string) {
   const res = await api.get(`/admin/employers/${id}`);
-  const { employer, requirements } = res.data.data;
-  return { ...employer, requirements };
+  const { employer, requirements, documents } = res.data.data;
+  return { ...employer, requirements, documents: documents ?? [] };
 }
 
 export async function approveEmployer(id: string) {
@@ -100,31 +105,6 @@ export async function openRecruitment(id: string) {
 
 export async function closeRecruitment(id: string) {
   const res = await api.patch(`/admin/job-orders/${id}/close`);
-  return res.data.data;
-}
-
-export async function startAdminReview(id: string) {
-  const res = await api.patch(`/admin/job-orders/${id}/review`);
-  return res.data.data;
-}
-
-export async function requestJobOrderClarification(id: string, notes: string) {
-  const res = await api.patch(`/admin/job-orders/${id}/clarification`, { notes });
-  return res.data.data;
-}
-
-export async function sendForEmployerApproval(id: string) {
-  const res = await api.patch(`/admin/job-orders/${id}/send-for-approval`);
-  return res.data.data;
-}
-
-export async function startLegalization(id: string) {
-  const res = await api.patch(`/admin/job-orders/${id}/start-legalization`);
-  return res.data.data;
-}
-
-export async function approveForRecruitment(id: string) {
-  const res = await api.patch(`/admin/job-orders/${id}/approve-for-recruitment`);
   return res.data.data;
 }
 

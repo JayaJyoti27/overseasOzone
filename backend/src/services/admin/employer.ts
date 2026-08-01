@@ -1,6 +1,8 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
-import { createNotification } from "./notifications";
+import { getSignedDocumentUrl } from "../storage";
+
+const EMPLOYER_DOCUMENTS_BUCKET = "employer-documents";
 
 interface EmployerFilters {
   page?: number;
@@ -95,39 +97,35 @@ export async function getEmployer(employerId: string) {
       ascending: false,
     });
 
-  return {
-    employer: data,
-    requirements: requirements ?? [],
-  };
-}
-
-/*
-|--------------------------------------------------------------------------
-| Employer Documents
-|--------------------------------------------------------------------------
-*/
-
-export async function getEmployerDocuments(employerId: string) {
-  const { data, error } = await supabase
+  const { data: rawDocuments } = await supabase
     .from("employer_documents")
     .select(
       `
-      id,
-      document_type,
-      name,
-      file_url,
-      status,
-      expiry_date,
-      uploaded_at,
-      updated_at
-    `,
+        id,
+        document_type,
+        file_name,
+        file_url,
+        status,
+        uploaded_at
+      `,
     )
     .eq("employer_id", employerId)
     .order("uploaded_at", { ascending: false });
 
-  if (error) throw new DatabaseError("Unable to fetch employer documents.", error);
+  const documents = await Promise.all(
+    (rawDocuments ?? []).map(async (doc) => ({
+      ...doc,
+      // Regenerate a fresh signed URL every time this is read, so the link
+      // always opens regardless of whether the storage bucket is public.
+      file_url: await getSignedDocumentUrl(EMPLOYER_DOCUMENTS_BUCKET, doc.file_url),
+    })),
+  );
 
-  return data ?? [];
+  return {
+    employer: data,
+    requirements: requirements ?? [],
+    documents,
+  };
 }
 
 /*
@@ -171,16 +169,6 @@ export async function approveEmployer(employerId: string, adminId: string) {
 
   if (error) throw new DatabaseError("Unable to approve employer.", error);
 
-  await createNotification({
-    user_id: employerId,
-    user_type: "employer",
-    title: "You're approved!",
-    message: `${data.company_name || "Your company"} has been approved. Complete your profile to start posting requirements.`,
-    type: "employer_approved",
-    related_entity: "employer",
-    related_entity_id: employerId,
-  });
-
   return data;
 }
 
@@ -212,7 +200,39 @@ export async function suspendEmployer(employerId: string) {
 | Activate Employer
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| Employer Documents
+|--------------------------------------------------------------------------
+*/
 
+export async function getEmployerDocuments(employerId: string) {
+  const { data: rawDocuments, error } = await supabase
+    .from("employer_documents")
+    .select(
+      `
+        id,
+        document_type,
+        file_name,
+        file_url,
+        status,
+        uploaded_at
+      `,
+    )
+    .eq("employer_id", employerId)
+    .order("uploaded_at", { ascending: false });
+
+  if (error) throw new DatabaseError("Unable to fetch employer documents.", error);
+
+  const documents = await Promise.all(
+    (rawDocuments ?? []).map(async (doc) => ({
+      ...doc,
+      file_url: await getSignedDocumentUrl(EMPLOYER_DOCUMENTS_BUCKET, doc.file_url),
+    })),
+  );
+
+  return documents;
+}
 export async function activateEmployer(employerId: string) {
   const { data, error } = await supabase
     .from("employers")

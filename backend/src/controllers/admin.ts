@@ -409,7 +409,10 @@ export async function rejectRequirement(req: Request, res: Response) {
 
 export async function convertRequirement(req: Request, res: Response) {
   try {
-    const data = await AdminService.convertRequirementToJobOrder(String(req.params.id), req.adminId!);
+    const data = await AdminService.convertRequirementToJobOrder(
+      String(req.params.id),
+      req.adminId!,
+    );
 
     return res.json({
       success: true,
