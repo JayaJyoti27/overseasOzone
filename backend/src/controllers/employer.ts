@@ -71,6 +71,25 @@ export async function uploadDocument(req: Request, res: Response) {
   }
 }
 
+export async function deleteDocument(req: Request, res: Response) {
+  try {
+    const data = await EmployerService.deleteEmployerDocument(
+      req.employerId!,
+      String(req.params.id),
+    );
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
+
 export async function submitForReview(req: Request, res: Response) {
   try {
     const data = await EmployerService.submitEmployerForReview(req.employerId!);

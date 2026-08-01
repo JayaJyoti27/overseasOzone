@@ -66,3 +66,23 @@ export async function uploadEmployerDocument(
 
   return data;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Delete Company Document
+|--------------------------------------------------------------------------
+*/
+
+export async function deleteEmployerDocument(employerId: string, documentId: string) {
+  const { error } = await supabase
+    .from("employer_documents")
+    .delete()
+    .eq("employer_id", employerId)
+    .eq("id", documentId);
+
+  if (error) {
+    throw new DatabaseError("Unable to delete document.", error);
+  }
+
+  return { success: true };
+}

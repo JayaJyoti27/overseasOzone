@@ -19,6 +19,7 @@ import {
   markAllNotificationsRead,
   getDocuments,
   uploadDocument,
+  deleteDocument,
   submitForReview,
   getCandidate,
   getCandidates,
@@ -96,6 +97,7 @@ router.patch("/notifications/read-all", markAllNotificationsRead);
 router.patch("/notifications/:id/read", markNotificationRead);
 router.get("/documents", getDocuments);
 router.post("/documents", upload.single("file"), uploadDocument);
+router.delete("/documents/:id", deleteDocument);
 router.post("/submit-for-review", submitForReview);
 
 router.get("/candidates", getCandidates);

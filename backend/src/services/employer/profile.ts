@@ -26,6 +26,7 @@ export async function getEmployerProfile(employerId: string) {
       head_office,
       license_number,
       license_expiry,
+      branches,
       approval_status,
       status,
       created_at,
@@ -48,6 +49,14 @@ export async function getEmployerProfile(employerId: string) {
 |--------------------------------------------------------------------------
 */
 
+interface BranchEntry {
+  id: string;
+  name: string;
+  city: string;
+  address?: string;
+  employee_count?: number | null;
+}
+
 interface UpdateEmployerProfileDto {
   company_name?: string;
   contact_person?: string;
@@ -55,9 +64,13 @@ interface UpdateEmployerProfileDto {
   phone?: string;
   website?: string;
   industry?: string;
+  country?: string;
   logo_url?: string;
   employee_count?: number;
   head_office?: string;
+  license_number?: string;
+  license_expiry?: string;
+  branches?: BranchEntry[];
   verification_doc_url?: string;
   email?: string;
 }
@@ -71,9 +84,13 @@ export async function updateEmployerProfile(employerId: string, payload: UpdateE
     phone: payload.phone,
     website: payload.website,
     industry: payload.industry,
+    country: payload.country,
     logo_url: payload.logo_url,
     employee_count: payload.employee_count,
     head_office: payload.head_office,
+    license_number: payload.license_number,
+    license_expiry: payload.license_expiry,
+    branches: payload.branches,
     verification_doc_url: payload.verification_doc_url,
     updated_at: new Date().toISOString(),
   };
