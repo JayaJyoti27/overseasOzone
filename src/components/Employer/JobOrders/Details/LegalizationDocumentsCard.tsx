@@ -5,9 +5,8 @@ import {
   documentStatusStyle,
   type LegalizationDocument,
 } from "@/lib/admin/legalizationDocument";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, FileText, ExternalLink, Upload } from "lucide-react";
+import { Loader2, FileText, Upload } from "lucide-react";
 
 interface LegalizationDocumentsCardProps {
   jobOrderId: string;
@@ -68,7 +67,7 @@ export function LegalizationDocumentsCard({ jobOrderId }: LegalizationDocumentsC
     );
   }
 
-  if (error) {
+  if (error && items.length === 0) {
     return (
       <div className="space-y-2 py-4 text-center">
         <p className="text-sm font-medium text-red-600">{error}</p>
@@ -87,7 +86,10 @@ export function LegalizationDocumentsCard({ jobOrderId }: LegalizationDocumentsC
     );
   }
 
-  const allSubmitted = items.every((item) => item.status !== "pending");
+  const requiredItems = items.filter((item) => item.is_required);
+  const allSubmitted = (requiredItems.length > 0 ? requiredItems : items).every(
+    (item) => item.status !== "pending",
+  );
 
   return (
     <div className="space-y-4">
@@ -101,7 +103,9 @@ export function LegalizationDocumentsCard({ jobOrderId }: LegalizationDocumentsC
           : "Please upload the documents below so we can proceed with legalization."}
       </div>
 
-      <div className="space-y-3">
+      {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {items.map((item) => {
           const isUploading = uploadingId === item.id;
           const rowError = uploadError[item.id];
@@ -109,45 +113,31 @@ export function LegalizationDocumentsCard({ jobOrderId }: LegalizationDocumentsC
           return (
             <div
               key={item.id}
-              className="rounded-2xl border border-border p-4 transition hover:border-blue"
+              className="flex aspect-square flex-col justify-between rounded-2xl border border-border p-3 transition hover:border-blue"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-semibold text-navy">{item.label}</h4>
-                    {item.is_required && (
-                      <Badge variant="outline" className="border-red-200 text-red-600">
-                        Required
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
+              <div className="flex items-start justify-between gap-1">
                 <span
-                  className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${documentStatusStyle(
+                  className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${documentStatusStyle(
                     item.status,
                   )}`}
                 >
                   {documentStatusLabel(item.status)}
                 </span>
+                {item.is_required && (
+                  <span className="mt-0.5 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-red-500">
+                    Required
+                  </span>
+                )}
               </div>
 
-              {item.file_url && (
-                <a
-                  href={item.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue hover:underline"
-                >
-                  <FileText className="h-4 w-4" />
-                  View uploaded file
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+              <h4
+                className="mt-2 line-clamp-3 text-xs font-semibold leading-snug text-navy"
+                title={item.label}
+              >
+                {item.label}
+              </h4>
 
-              {rowError && <p className="mt-2 text-xs text-red-600">{rowError}</p>}
-
-              <div className="mt-4 flex items-center gap-3">
+              <div className="mt-2 flex items-center gap-1.5">
                 <input
                   ref={(el) => {
                     fileInputs.current[item.id] = el;
@@ -156,21 +146,39 @@ export function LegalizationDocumentsCard({ jobOrderId }: LegalizationDocumentsC
                   className="hidden"
                   onChange={(e) => handleFileChange(item, e.target.files?.[0])}
                 />
+
+                {item.file_url && (
+                  <a
+                    href={item.file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="View uploaded file"
+                    className="flex h-8 w-8 flex-none items-center justify-center rounded-full border border-border text-blue transition hover:border-blue"
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                  </a>
+                )}
+
                 <Button
                   size="sm"
                   variant="outline"
-                  className="rounded-full"
+                  className="h-8 flex-1 rounded-full px-2 text-[11px]"
                   disabled={isUploading}
                   onClick={() => fileInputs.current[item.id]?.click()}
+                  title={item.file_url ? "Replace file" : "Upload file"}
                 >
                   {isUploading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <Upload className="mr-2 h-4 w-4" />
+                    <>
+                      <Upload className="mr-1 h-3.5 w-3.5" />
+                      {item.file_url ? "Replace" : "Upload"}
+                    </>
                   )}
-                  {item.file_url ? "Replace file" : "Upload file"}
                 </Button>
               </div>
+
+              {rowError && <p className="mt-1 line-clamp-2 text-[10px] text-red-600">{rowError}</p>}
             </div>
           );
         })}

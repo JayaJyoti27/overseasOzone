@@ -1,7 +1,6 @@
 import { supabase } from "../../config/supabase";
-import { DatabaseError, ForbiddenError, NotFoundError } from "../../utils/AppError";
+import { DatabaseError, NotFoundError } from "../../utils/AppError";
 import {
-  EMPLOYER_OWNED_DOCUMENT_TYPES,
   initializeLegalizationChecklist,
   LEGALIZATION_REACHED_STATUSES,
 } from "../admin/legalizationDocuments";
@@ -11,10 +10,14 @@ import { LegalizationDocument } from "../../types/legalizationDocument";
 |--------------------------------------------------------------------------
 | Get Employer's Legalization Documents
 |--------------------------------------------------------------------------
-| Scoped to the 3 employer-owned checklist items (Demand Letter, Specimen
-| Employment Contract, Power of Attorney) on a job order that belongs to
-| this employer. The other 5 items (embassy/PoE attestations) are handled
-| by our ops team and are intentionally not exposed here.
+| Returns the full checklist for a job order that belongs to this
+| employer. Previously this was scoped to only the 3 employer-owned items
+| (Demand Letter, Specimen Employment Contract, Power of Attorney), with
+| the other 5 (embassy/PoE attestations etc.) handled exclusively by ops.
+| In practice employers are often the ones who actually have those extra
+| attestation documents in hand, so all checklist items are now visible
+| and uploadable here - EMPLOYER_OWNED_DOCUMENT_TYPES is only used for
+| badging on the admin side now, not for gating employer access.
 |--------------------------------------------------------------------------
 */
 
@@ -28,7 +31,6 @@ export async function getEmployerLegalizationDocuments(
     .from("job_order_legalization_documents")
     .select("*")
     .eq("job_order_id", jobOrderId)
-    .in("document_type", EMPLOYER_OWNED_DOCUMENT_TYPES)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -52,7 +54,6 @@ export async function getEmployerLegalizationDocuments(
       .from("job_order_legalization_documents")
       .select("*")
       .eq("job_order_id", jobOrderId)
-      .in("document_type", EMPLOYER_OWNED_DOCUMENT_TYPES)
       .order("created_at", { ascending: true });
 
     if (seededError) {
@@ -95,10 +96,6 @@ export async function uploadEmployerLegalizationDocument(
 
   if (existing.job_order_id !== jobOrderId) {
     throw new NotFoundError("Legalization document not found.");
-  }
-
-  if (!EMPLOYER_OWNED_DOCUMENT_TYPES.includes(existing.document_type)) {
-    throw new ForbiddenError("This document is handled by the recruitment team, not the employer.");
   }
 
   const { data, error } = await supabase
