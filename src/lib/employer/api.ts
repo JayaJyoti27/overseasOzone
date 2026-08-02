@@ -178,3 +178,32 @@ export async function submitForReview() {
   const { data } = await api.post("/employer/submit-for-review");
   return data.data;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Legalization Documents (Demand Letter, Specimen Contract, POA)
+|--------------------------------------------------------------------------
+| Scoped to the 3 employer-owned checklist items on a job order. The other
+| 5 items (embassy/PoE attestations) are ops-team-only and never appear here.
+*/
+
+export async function getJobOrderLegalization(jobOrderId: string) {
+  const { data } = await api.get(`/employer/job-orders/${jobOrderId}/legalization`);
+  return data.data;
+}
+
+export async function uploadJobOrderLegalizationDocument(
+  jobOrderId: string,
+  docId: string,
+  file: File,
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await api.post(
+    `/employer/job-orders/${jobOrderId}/legalization/${docId}/upload`,
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return data.data;
+}

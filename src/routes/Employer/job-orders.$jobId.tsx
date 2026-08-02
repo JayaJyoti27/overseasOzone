@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { getRequirement } from "@/lib/employer/api";
 import { requirementStatusLabel, requirementStatusStyle } from "@/lib/employer/requirementStatus";
-import { statusLabel, statusStyle } from "@/lib/admin/jobOrderStatus";
+import { statusLabel, statusStyle, TIMELINE_STAGES } from "@/lib/admin/jobOrderStatus";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { RequirementEditForm } from "@/components/Employer/JobOrders/RequirementEditForm";
+import { LegalizationDocumentsCard } from "@/components/Employer/JobOrders/Details/LegalizationDocumentsCard";
 
 export const Route = createFileRoute("/Employer/job-orders/$jobId")({
   component: JobOrderDetailsPage,
@@ -87,6 +88,17 @@ function JobOrderDetailsPage() {
   }
 
   const { requirement, timeline, convertedJobOrder, recruitment, recentCandidates } = details;
+
+  const legalizationStageIndex = TIMELINE_STAGES.indexOf("legalization_in_progress");
+  const currentStageIndex = convertedJobOrder
+    ? TIMELINE_STAGES.indexOf(convertedJobOrder.status)
+    : -1;
+  const showLegalizationDocuments =
+    !!convertedJobOrder &&
+    (currentStageIndex >= legalizationStageIndex ||
+      ["candidate_selected", "visa_processing", "deployment_completed"].includes(
+        convertedJobOrder.status,
+      ));
 
   return (
     <div className="space-y-6">
@@ -169,6 +181,12 @@ function JobOrderDetailsPage() {
               {statusLabel(convertedJobOrder.status)}
             </span>
           </div>
+        </Panel>
+      )}
+
+      {showLegalizationDocuments && (
+        <Panel title="Legalization Documents">
+          <LegalizationDocumentsCard jobOrderId={convertedJobOrder.id} />
         </Panel>
       )}
 
