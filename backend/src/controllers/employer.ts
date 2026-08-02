@@ -424,3 +424,69 @@ export async function getCandidates(req: Request, res: Response) {
     return res.status(500).json({ success: false, message: err.message });
   }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Legalization Documents (Demand Letter, Specimen Contract, POA)
+|--------------------------------------------------------------------------
+*/
+
+export async function getJobOrderLegalizationDocuments(req: Request, res: Response) {
+  try {
+    const data = await EmployerService.getEmployerLegalizationDocuments(
+      req.employerId!,
+      String(req.params.id),
+    );
+
+    return res.json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
+
+export async function uploadJobOrderLegalizationDocument(req: Request, res: Response) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file was uploaded.",
+      });
+    }
+
+    const employerId = req.employerId!;
+    const jobOrderId = String(req.params.id);
+    const documentId = String(req.params.docId);
+
+    const path = `${employerId}/${jobOrderId}/${documentId}/${Date.now()}-${req.file.originalname}`;
+
+    const publicUrl = await StorageService.uploadDocument(
+      "job-order-legalization-documents",
+      path,
+      req.file.buffer,
+      req.file.mimetype,
+    );
+
+    const data = await EmployerService.uploadEmployerLegalizationDocument(
+      employerId,
+      jobOrderId,
+      documentId,
+      publicUrl,
+    );
+
+    return res.status(201).json({
+      success: true,
+      data,
+    });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}

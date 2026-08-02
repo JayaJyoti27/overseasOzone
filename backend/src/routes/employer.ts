@@ -23,6 +23,8 @@ import {
   submitForReview,
   getCandidate,
   getCandidates,
+  getJobOrderLegalizationDocuments,
+  uploadJobOrderLegalizationDocument,
 } from "../controllers/employer";
 import { upload } from "../middleware/upload";
 
@@ -102,4 +104,19 @@ router.post("/submit-for-review", submitForReview);
 
 router.get("/candidates", getCandidates);
 router.get("/candidates/:id", getCandidate);
+
+/*
+|--------------------------------------------------------------------------
+| Legalization Documents (Demand Letter, Specimen Contract, POA)
+|--------------------------------------------------------------------------
+*/
+
+router.get("/job-orders/:id/legalization", getJobOrderLegalizationDocuments);
+
+router.post(
+  "/job-orders/:id/legalization/:docId/upload",
+  upload.single("file"),
+  uploadJobOrderLegalizationDocument,
+);
+
 export default router;

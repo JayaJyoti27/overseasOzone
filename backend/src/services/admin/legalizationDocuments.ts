@@ -1,10 +1,27 @@
 import { supabase } from "../../config/supabase";
-import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { ConflictError, DatabaseError, ForbiddenError, NotFoundError } from "../../utils/AppError";
 import {
   LegalizationDocument,
   LegalizationDocumentType,
   UpdateLegalizationDocumentInput,
 } from "../../types/legalizationDocument";
+
+/*
+|--------------------------------------------------------------------------
+| Employer-Owned Document Types
+|--------------------------------------------------------------------------
+| Of the 8 checklist items, only these 3 originate from the employer
+| themselves (authority: "Foreign Employer") - the rest (Indian Mission
+| attestation, PoE permission, etc.) are obtained by our own ops team from
+| government authorities and the employer has no part in them.
+|--------------------------------------------------------------------------
+*/
+
+export const EMPLOYER_OWNED_DOCUMENT_TYPES: LegalizationDocumentType[] = [
+  "demand_letter",
+  "specimen_employment_contract",
+  "power_of_attorney",
+];
 
 /*
 |--------------------------------------------------------------------------

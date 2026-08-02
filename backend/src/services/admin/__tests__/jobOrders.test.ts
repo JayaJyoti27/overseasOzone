@@ -36,6 +36,7 @@ vi.mock("../../../config/supabase", () => {
 
 import { ConflictError, NotFoundError } from "../../../utils/AppError";
 import * as JobOrderService from "../jobOrders";
+import { supabase } from "../../../config/supabase";
 
 const ADMIN_ID = "admin-123";
 const JOB_ORDER_ID = "job-order-abc";
@@ -151,6 +152,35 @@ describe("startLegalization", () => {
     const result = await JobOrderService.startLegalization(JOB_ORDER_ID, ADMIN_ID);
 
     expect(result.status).toBe("legalization_in_progress");
+  });
+
+  it("notifies the employer to upload their 3 documents when employer_id is present", async () => {
+    queueResponses(
+      { data: { status: "employer_approval_pending" }, error: null },
+      {
+        data: { id: JOB_ORDER_ID, status: "legalization_in_progress", employer_id: "employer-1", title: "Welder" },
+        error: null,
+      },
+      { data: null, error: null },
+      // Checklist not yet seeded for this job order.
+      { data: null, error: { code: "PGRST116" } },
+      // Default checklist rows inserted.
+      { error: null },
+      // Employer notification inserted.
+      { data: null, error: null },
+    );
+
+    const insertSpy = (supabase as any).insert;
+
+    await JobOrderService.startLegalization(JOB_ORDER_ID, ADMIN_ID);
+
+    const notificationCall = insertSpy.mock.calls.find(
+      (call: any[]) => call[0]?.related_entity === "job_order" && call[0]?.type === "legalization",
+    );
+
+    expect(notificationCall).toBeTruthy();
+    expect(notificationCall![0].user_id).toBe("employer-1");
+    expect(notificationCall![0].message).toContain("Welder");
   });
 });
 

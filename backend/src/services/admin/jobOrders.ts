@@ -325,6 +325,22 @@ export async function startLegalization(jobOrderId: string, adminId: string) {
 
   await initializeLegalizationChecklist(jobOrderId);
 
+  if (result.employer_id) {
+    await supabase.from("notifications").insert({
+      user_id: result.employer_id,
+
+      title: "Documents needed for legalization",
+
+      message: `Please upload the Demand Letter, Specimen Employment Contract, and Power of Attorney for "${result.title ?? "your job order"}" so we can proceed with legalization.`,
+
+      type: "legalization",
+
+      related_entity: "job_order",
+
+      related_entity_id: jobOrderId,
+    });
+  }
+
   return result;
 }
 

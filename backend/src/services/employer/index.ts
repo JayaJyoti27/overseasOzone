@@ -24,6 +24,7 @@ export * from "./requirement";
 
 export * from "./requirementDetails";
 export * from "./documents";
+export * from "./jobOrderLegalization";
 /*
 |--------------------------------------------------------------------------
 | Interviews

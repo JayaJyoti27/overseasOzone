@@ -14,9 +14,11 @@ import {
   statusLabel,
   statusStyle,
   getAvailableActions,
+  TIMELINE_STAGES,
   type JobOrderAction,
 } from "@/lib/admin/jobOrderStatus";
 import { JobOrderTimeline } from "@/components/Admin/JobOrders/JobOrderTimeline";
+import { LegalizationChecklist } from "@/components/Admin/JobOrders/LegalizationChecklist";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +79,7 @@ function JobOrderDetails() {
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [clarificationOpen, setClarificationOpen] = useState(false);
   const [clarificationNotes, setClarificationNotes] = useState("");
+  const [legalizationComplete, setLegalizationComplete] = useState(false);
 
   useEffect(() => {
     load();
@@ -143,6 +146,12 @@ function JobOrderDetails() {
 
   const availableActions = getAvailableActions(job.status);
 
+  const legalizationStageIndex = TIMELINE_STAGES.indexOf("legalization_in_progress");
+  const currentStageIndex = TIMELINE_STAGES.indexOf(job.status);
+  const showLegalizationChecklist =
+    currentStageIndex >= legalizationStageIndex ||
+    ["candidate_selected", "visa_processing", "deployment_completed"].includes(job.status);
+
   return (
     <div className="relative space-y-6">
       <DotGrid className="right-0 top-0 h-20 w-20 opacity-60" />
@@ -188,31 +197,48 @@ function JobOrderDetails() {
                 <span className="font-medium text-navy">{statusLabel(job.status)}</span> status.
               </p>
             ) : (
-              availableActions.map((a) => (
-                <Button
-                  key={a.action}
-                  variant={a.variant === "destructive" ? "destructive" : "default"}
-                  className={`w-full rounded-full ${
-                    a.variant === "secondary"
-                      ? "border border-border bg-white text-navy hover:bg-blue-wash"
-                      : a.variant !== "destructive"
-                        ? "bg-navy hover:bg-blue"
-                        : ""
-                  }`}
-                  disabled={actionPending !== null}
-                  onClick={() => runAction(a.action)}
-                >
-                  {actionPending === a.action ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    a.label
-                  )}
-                </Button>
-              ))
+              availableActions.map((a) => {
+                const blockedByLegalization =
+                  a.action === "approveForRecruitment" && !legalizationComplete;
+
+                return (
+                  <div key={a.action}>
+                    <Button
+                      variant={a.variant === "destructive" ? "destructive" : "default"}
+                      className={`w-full rounded-full ${
+                        a.variant === "secondary"
+                          ? "border border-border bg-white text-navy hover:bg-blue-wash"
+                          : a.variant !== "destructive"
+                            ? "bg-navy hover:bg-blue"
+                            : ""
+                      }`}
+                      disabled={actionPending !== null || blockedByLegalization}
+                      onClick={() => runAction(a.action)}
+                    >
+                      {actionPending === a.action ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        a.label
+                      )}
+                    </Button>
+                    {blockedByLegalization && (
+                      <p className="mt-1.5 text-xs text-ink">
+                        Blocked until every required legalization document is attested.
+                      </p>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </Panel>
       </div>
+
+      {showLegalizationChecklist && (
+        <Panel title="Legalization Checklist">
+          <LegalizationChecklist jobOrderId={job.id} onCompletenessChange={setLegalizationComplete} />
+        </Panel>
+      )}
 
       <Panel title="Assigned Candidates">
         {!job.candidates?.length ? (

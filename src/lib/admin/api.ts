@@ -133,6 +133,21 @@ export async function closeRecruitment(id: string) {
   return res.data.data;
 }
 
+// Legalization Checklist
+export async function getJobOrderLegalization(id: string) {
+  const res = await api.get(`/admin/job-orders/${id}/legalization`);
+  return res.data.data;
+}
+
+export async function updateJobOrderLegalizationDocument(
+  jobOrderId: string,
+  docId: string,
+  payload: Record<string, any>,
+) {
+  const res = await api.patch(`/admin/job-orders/${jobOrderId}/legalization/${docId}`, payload);
+  return res.data.data;
+}
+
 // Requirements
 export async function getRequirements(params?: Record<string, any>) {
   const res = await api.get("/admin/requirements", { params });
