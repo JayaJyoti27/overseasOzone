@@ -125,14 +125,14 @@ export async function getJobOrder(jobOrderId: string) {
     throw new NotFoundError("Job order not found.");
   }
 
-  // Self-heal: job orders that reached recruitment_open before the publish
-  // step existed (or where a publish attempt silently failed) would
-  // otherwise stay invisible to candidates forever, since nothing else
-  // re-triggers openRecruitment() for an already-open job order. Fixing it
-  // up here means simply opening the job order in the admin panel repairs
-  // it - no manual DB work, same pattern as the legalization checklist
-  // self-heal.
-  if (data.status === "recruitment_open") {
+  // Self-heal: job orders that reached approved_for_recruitment/recruitment_open
+  // before the publish step existed (or where a publish attempt silently
+  // failed) would otherwise stay invisible to candidates forever, since
+  // nothing else re-triggers the publish for a job order already past that
+  // point. Fixing it up here means simply opening the job order in the
+  // admin panel repairs it - no manual DB work, same pattern as the
+  // legalization checklist self-heal.
+  if (data.status === "approved_for_recruitment" || data.status === "recruitment_open") {
     const { data: published } = await supabase
       .from("jobs")
       .select("id")
@@ -386,7 +386,7 @@ export async function approveForRecruitment(jobOrderId: string, adminId: string)
     );
   }
 
-  return transitionJobOrderStatus(
+  const result = await transitionJobOrderStatus(
     jobOrderId,
     ["legalization_in_progress"],
     "approved_for_recruitment",
@@ -396,6 +396,10 @@ export async function approveForRecruitment(jobOrderId: string, adminId: string)
       approved_at: new Date().toISOString(),
     },
   );
+
+  await publishJobOrderToCandidates(jobOrderId);
+
+  return result;
 }
 
 /*
@@ -403,13 +407,11 @@ export async function approveForRecruitment(jobOrderId: string, adminId: string)
 | Publish / Unpublish to Candidate-Facing Job Board
 |--------------------------------------------------------------------------
 | The candidate "Apply for Jobs" pages read from the separate `jobs` table
-| (filtered to status = "active"), not from `job_orders` directly. Nothing
-| was ever writing to that table on the real admin approval path - there
-| was a leftover "auto publish" insert wired to a different, unused legacy
-| status-update endpoint, firing at approved_for_recruitment instead of
-| here. Candidates should see a job order once it's actually open for
-| recruitment (recruitment_open), not one step earlier while it's still
-| only internally approved - so this fires from openRecruitment below.
+| (filtered to status = "active"), not from `job_orders` directly. Fires
+| from approveForRecruitment below, so candidates see the listing as soon
+| as it's approved - openRecruitment also re-fires it (upsert, so it's a
+| no-op if already published) purely as a safety net in case a listing
+| ever gets closed and reopened without going back through approval.
 |
 | Upserts on job_order_id so re-opening a previously-closed job order
 | reactivates the same listing instead of creating a duplicate. Failure to
@@ -486,8 +488,8 @@ async function unpublishJobOrderFromCandidates(jobOrderId: string) {
 |--------------------------------------------------------------------------
 | approved_for_recruitment -> recruitment_open
 |
-| This is the point candidates should start seeing the job - so it also
-| publishes/reactivates the listing on the candidate job board.
+| Candidates already see the listing from the approval step above; this
+| just re-fires the (idempotent) publish as a safety net.
 |--------------------------------------------------------------------------
 */
 

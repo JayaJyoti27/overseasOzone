@@ -219,6 +219,14 @@ describe("approveForRecruitment", () => {
         error: null,
       },
       { data: null, error: null },
+      // publishJobOrderToCandidates: load job order (+employer), check for
+      // an existing jobs row, then insert since none exists yet.
+      {
+        data: { id: JOB_ORDER_ID, employer_id: "employer-1", title: "Nurse" },
+        error: null,
+      },
+      { data: null, error: null },
+      { error: null },
     );
 
     const result = await JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID);
@@ -343,7 +351,7 @@ describe("full happy-path chain", () => {
         );
       }
 
-      if (nextStatus === "recruitment_open") {
+      if (nextStatus === "approved_for_recruitment") {
         queueResponses(
           // publishJobOrderToCandidates: load job order (+employer), check
           // for an existing jobs row, then insert since none exists yet.
@@ -353,6 +361,22 @@ describe("full happy-path chain", () => {
           },
           { data: null, error: null },
           { error: null },
+        );
+      }
+
+      if (nextStatus === "recruitment_open") {
+        queueResponses(
+          // publishJobOrderToCandidates (safety-net re-fire): load job
+          // order (+employer), then an existing jobs row IS found
+          // (published back at approval), so it takes the update() path -
+          // which, unlike insert(), never terminates on a queue-resolving
+          // method in this mock (no trailing .single()), so no third
+          // response is consumed here.
+          {
+            data: { id: JOB_ORDER_ID, employer_id: "employer-1", title: "Nurse" },
+            error: null,
+          },
+          { data: { id: "jobs-row-1" }, error: null },
         );
       }
 
