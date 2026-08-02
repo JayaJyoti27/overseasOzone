@@ -5,39 +5,16 @@ import {
   documentStatusStyle,
   isChecklistComplete,
   isEmployerOwnedDocument,
-  LEGALIZATION_DOCUMENT_STATUSES,
   type LegalizationDocument,
-  type LegalizationDocumentStatus,
 } from "@/lib/admin/legalizationDocument";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Loader2, FileText, ExternalLink } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Loader2, FileText, ExternalLink, Check, X } from "lucide-react";
 
 interface LegalizationChecklistProps {
   jobOrderId: string;
   onCompletenessChange?: (complete: boolean) => void;
-}
-
-interface RowDraft {
-  status: LegalizationDocumentStatus;
-  reference_number: string;
-  notes: string;
-}
-
-function toDraft(item: LegalizationDocument): RowDraft {
-  return {
-    status: item.status,
-    reference_number: item.reference_number ?? "",
-    notes: item.notes ?? "",
-  };
 }
 
 export function LegalizationChecklist({
@@ -45,10 +22,11 @@ export function LegalizationChecklist({
   onCompletenessChange,
 }: LegalizationChecklistProps) {
   const [items, setItems] = useState<LegalizationDocument[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, RowDraft>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  // Track which document is mid-request so we can disable just that row's
+  // controls without locking the whole list.
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -61,7 +39,6 @@ export function LegalizationChecklist({
     try {
       const data: LegalizationDocument[] = await getJobOrderLegalization(jobOrderId);
       setItems(data);
-      setDrafts(Object.fromEntries(data.map((item) => [item.id, toDraft(item)])));
       onCompletenessChange?.(isChecklistComplete(data));
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Failed to load checklist.");
@@ -70,28 +47,23 @@ export function LegalizationChecklist({
     }
   }
 
-  function updateDraft(id: string, patch: Partial<RowDraft>) {
-    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
-  }
-
-  async function save(id: string) {
-    const draft = drafts[id];
-    if (!draft) return;
-
-    setSavingId(id);
+  async function updateDocument(id: string, patch: Record<string, unknown>) {
+    setPendingId(id);
+    setError(null);
     try {
-      await updateJobOrderLegalizationDocument(jobOrderId, id, {
-        status: draft.status,
-        reference_number: draft.reference_number || undefined,
-        notes: draft.notes || undefined,
-      });
+      await updateJobOrderLegalizationDocument(jobOrderId, id, patch);
       await load();
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || "Failed to update document.");
     } finally {
-      setSavingId(null);
+      setPendingId(null);
     }
   }
+
+  const approve = (id: string) => updateDocument(id, { status: "attested" });
+  const reject = (id: string) => updateDocument(id, { status: "rejected" });
+  const toggleRequired = (item: LegalizationDocument) =>
+    updateDocument(item.id, { is_required: !item.is_required });
 
   if (loading) {
     return (
@@ -101,7 +73,7 @@ export function LegalizationChecklist({
     );
   }
 
-  if (error) {
+  if (error && items.length === 0) {
     return (
       <div className="space-y-2 py-4 text-center">
         <p className="text-sm font-medium text-red-600">{error}</p>
@@ -134,10 +106,14 @@ export function LegalizationChecklist({
           : "Approval for recruitment is blocked until every required document below is marked Attested."}
       </div>
 
+      {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
       <div className="space-y-3">
         {items.map((item) => {
-          const draft = drafts[item.id] ?? toDraft(item);
           const employerOwned = isEmployerOwnedDocument(item.document_type);
+          const isPending = pendingId === item.id;
+          const isAttested = item.status === "attested";
+          const isRejected = item.status === "rejected";
 
           return (
             <div
@@ -171,7 +147,7 @@ export function LegalizationChecklist({
                 </span>
               </div>
 
-              {item.file_url && (
+              {item.file_url ? (
                 <a
                   href={item.file_url}
                   target="_blank"
@@ -182,64 +158,53 @@ export function LegalizationChecklist({
                   View uploaded file
                   <ExternalLink className="h-3 w-3" />
                 </a>
+              ) : (
+                <p className="mt-3 text-sm text-ink">Not uploaded yet.</p>
               )}
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">Status</label>
-                  <Select
-                    value={draft.status}
-                    onValueChange={(value) =>
-                      updateDraft(item.id, { status: value as LegalizationDocumentStatus })
-                    }
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                <label className="flex items-center gap-2 text-xs font-medium text-ink">
+                  <Switch
+                    checked={item.is_required}
+                    disabled={isPending}
+                    onCheckedChange={() => toggleRequired(item)}
+                  />
+                  Required for this job order
+                </label>
+
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full border-red-200 text-red-600 hover:bg-red-50"
+                    disabled={isPending || !item.file_url || isRejected}
+                    onClick={() => reject(item.id)}
                   >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LEGALIZATION_DOCUMENT_STATUSES.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {documentStatusLabel(status)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <X className="mr-1.5 h-4 w-4" />
+                        Reject
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="rounded-full bg-navy hover:bg-blue"
+                    disabled={isPending || !item.file_url || isAttested}
+                    onClick={() => approve(item.id)}
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="mr-1.5 h-4 w-4" />
+                        {isAttested ? "Attested" : "Approve"}
+                      </>
+                    )}
+                  </Button>
                 </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">
-                    Reference Number
-                  </label>
-                  <Input
-                    value={draft.reference_number}
-                    onChange={(e) => updateDraft(item.id, { reference_number: e.target.value })}
-                    placeholder="e.g. Form VI ref."
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink">Notes</label>
-                  <Input
-                    value={draft.notes}
-                    onChange={(e) => updateDraft(item.id, { notes: e.target.value })}
-                    placeholder="Optional notes"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3 flex justify-end">
-                <Button
-                  size="sm"
-                  className="rounded-full bg-navy hover:bg-blue"
-                  disabled={savingId === item.id}
-                  onClick={() => save(item.id)}
-                >
-                  {savingId === item.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save"
-                  )}
-                </Button>
               </div>
             </div>
           );

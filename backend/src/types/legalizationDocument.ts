@@ -56,4 +56,8 @@ export interface UpdateLegalizationDocumentInput {
   reference_number?: string;
   notes?: string;
   authority?: string;
+  // Whether this document is required for this specific job order. Not
+  // fixed per document type - destination/skill-category dependent, so
+  // admins can flip it per job order instead of it being hardcoded true.
+  is_required?: boolean;
 }
