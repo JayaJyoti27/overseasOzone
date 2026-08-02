@@ -1,6 +1,4 @@
-import { useMemo } from "react";
-
-import { X } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,89 +11,93 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { useJobs } from "@/lib/candidate/hooks";
+const SALARY_FLOORS = [
+  { value: "1000", label: "1,000+" },
+  { value: "2000", label: "2,000+" },
+  { value: "3000", label: "3,000+" },
+  { value: "5000", label: "5,000+" },
+];
 
 interface Props {
+  countries: string[];
   country: string;
-  category: string;
   onCountryChange: (value: string) => void;
-  onCategoryChange: (value: string) => void;
-  onClear: () => void;
+  minSalary: string;
+  onMinSalaryChange: (value: string) => void;
 }
 
 export default function JobFilters({
+  countries,
   country,
-  category,
   onCountryChange,
-  onCategoryChange,
-  onClear,
+  minSalary,
+  onMinSalaryChange,
 }: Props) {
-  // Options come from whatever jobs are actually posted, not a fixed
-  // guessed list - so this never shows a country/sector with zero jobs
-  // in it, and never omits a real one.
-  const { data: allJobs } = useJobs();
-
-  const countries = useMemo(
-    () => [...new Set((allJobs ?? []).map((j) => j.country).filter(Boolean))].sort(),
-    [allJobs],
-  );
-
-  const sectors = useMemo(
-    () => [...new Set((allJobs ?? []).map((j) => j.sector).filter(Boolean))].sort(),
-    [allJobs],
-  );
-
-  const hasActiveFilters = !!country || !!category;
+  const isFiltered = country !== "all" || minSalary !== "all";
 
   return (
-    <Card className="rounded-2xl p-5">
+    <Card className="rounded-2xl border-none bg-white p-5 shadow-card">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="font-semibold">Filters</h2>
+        <h2 className="flex items-center gap-2 font-semibold text-navy">
+          <SlidersHorizontal className="h-4 w-4 text-blue" />
+          Filters
+        </h2>
 
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" className="h-auto p-0 text-xs" onClick={onClear}>
-            <X className="mr-1 h-3 w-3" />
-            Clear
+        {isFiltered && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto p-0 text-xs font-medium text-blue hover:bg-transparent hover:underline"
+            onClick={() => {
+              onCountryChange("all");
+              onMinSalaryChange("all");
+            }}
+          >
+            Clear all
           </Button>
         )}
       </div>
 
       <div className="space-y-4">
-        <Select value={country || undefined} onValueChange={onCountryChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Country" />
-          </SelectTrigger>
+        <div className="space-y-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Location</span>
 
-          <SelectContent>
-            {countries.length === 0 && (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">No jobs posted yet</div>
-            )}
+          <Select value={country} onValueChange={onCountryChange}>
+            <SelectTrigger className="h-11 rounded-xl bg-blue-wash/60">
+              <SelectValue placeholder="Any location" />
+            </SelectTrigger>
 
-            {countries.map((c) => (
-              <SelectItem key={c} value={c as string}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectContent>
+              <SelectItem value="all">Any location</SelectItem>
 
-        <Select value={category || undefined} onValueChange={onCategoryChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sector" />
-          </SelectTrigger>
+              {countries.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <SelectContent>
-            {sectors.length === 0 && (
-              <div className="px-2 py-1.5 text-sm text-muted-foreground">No jobs posted yet</div>
-            )}
+        <div className="space-y-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Minimum salary</span>
 
-            {sectors.map((s) => (
-              <SelectItem key={s} value={s as string}>
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={minSalary} onValueChange={onMinSalaryChange}>
+            <SelectTrigger className="h-11 rounded-xl bg-blue-wash/60">
+              <SelectValue placeholder="Any salary" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="all">Any salary</SelectItem>
+
+              {SALARY_FLOORS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </Card>
   );

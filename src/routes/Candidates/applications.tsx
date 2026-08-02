@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 
 import ApplicationFilters from "@/components/Candidate/applications/ApplicationFilters";
 import ApplicationList from "@/components/Candidate/applications/ApplicationList";
@@ -9,6 +9,15 @@ export const Route = createFileRoute("/Candidates/applications")({
 });
 
 function ApplicationsPage() {
+  const { pathname } = useLocation();
+
+  const isDetailView =
+    pathname !== "/Candidates/applications" && pathname !== "/Candidates/applications/";
+
+  if (isDetailView) {
+    return <Outlet />;
+  }
+
   return (
     <div className="space-y-6">
       <ApplicationStats />

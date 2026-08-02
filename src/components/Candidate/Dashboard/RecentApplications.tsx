@@ -93,7 +93,7 @@ export default function RecentApplications() {
         <CardTitle>Recent Applications</CardTitle>
 
         <Button variant="ghost" asChild>
-          <Link to="/Candidates/applications">View All</Link>
+          <Link to="/Candidate/applications">View All</Link>
         </Button>
       </CardHeader>
 
@@ -102,7 +102,7 @@ export default function RecentApplications() {
           {data.slice(0, 5).map((application) => (
             <Link
               key={application.id}
-              to="/Candidates/applications/$id"
+              to="/Candidate/applications/$id"
               params={{
                 id: application.id,
               }}

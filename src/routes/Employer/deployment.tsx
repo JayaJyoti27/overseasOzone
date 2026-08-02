@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 
 import { DeploymentHeader } from "@/components/Employer/Deployment/DeploymentHeader";
 import { DeploymentStats } from "@/components/Employer/Deployment/DeploymentStats";
@@ -9,6 +9,14 @@ export const Route = createFileRoute("/Employer/deployment")({
 });
 
 function DeploymentPage() {
+  const { pathname } = useLocation();
+
+  const isDetailView = pathname !== "/Employer/deployment" && pathname !== "/Employer/deployment/";
+
+  if (isDetailView) {
+    return <Outlet />;
+  }
+
   return (
     <div className="space-y-6">
       <DeploymentHeader />

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
 
 import { CandidatesTable } from "@/components/Employer/Candidate/CandidatesTable";
 
@@ -7,6 +7,14 @@ export const Route = createFileRoute("/Employer/candidates")({
 });
 
 function CandidatesPage() {
+  const { pathname } = useLocation();
+
+  const isDetailView = pathname !== "/Employer/candidates" && pathname !== "/Employer/candidates/";
+
+  if (isDetailView) {
+    return <Outlet />;
+  }
+
   return (
     <div className="space-y-6">
       <div>
