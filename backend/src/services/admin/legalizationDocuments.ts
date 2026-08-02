@@ -152,9 +152,22 @@ export async function initializeLegalizationChecklist(jobOrderId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function getLegalizationChecklist(
-  jobOrderId: string,
-): Promise<LegalizationDocument[]> {
+// Statuses at or past "legalization_in_progress" on the job order lifecycle.
+// If a job order lands in read here with no checklist rows, it means the
+// status was reached before the checklist-seeding logic existed (or via a
+// direct status write) - self-heal by seeding it now instead of leaving the
+// employer/admin looking at a permanently empty panel.
+export const LEGALIZATION_REACHED_STATUSES = [
+  "legalization_in_progress",
+  "approved_for_recruitment",
+  "recruitment_open",
+  "recruitment_closed",
+  "candidate_selected",
+  "visa_processing",
+  "deployment_completed",
+];
+
+async function fetchChecklistRows(jobOrderId: string): Promise<LegalizationDocument[]> {
   const { data, error } = await supabase
     .from("job_order_legalization_documents")
     .select("*")
@@ -166,6 +179,29 @@ export async function getLegalizationChecklist(
   }
 
   return data ?? [];
+}
+
+export async function getLegalizationChecklist(
+  jobOrderId: string,
+): Promise<LegalizationDocument[]> {
+  const existing = await fetchChecklistRows(jobOrderId);
+
+  if (existing.length > 0) {
+    return existing;
+  }
+
+  const { data: jobOrder } = await supabase
+    .from("job_orders")
+    .select("status")
+    .eq("id", jobOrderId)
+    .single();
+
+  if (jobOrder && LEGALIZATION_REACHED_STATUSES.includes(jobOrder.status)) {
+    await initializeLegalizationChecklist(jobOrderId);
+    return fetchChecklistRows(jobOrderId);
+  }
+
+  return [];
 }
 
 /*
@@ -218,7 +254,7 @@ export async function updateLegalizationDocument(
 */
 
 export async function isLegalizationComplete(jobOrderId: string): Promise<boolean> {
-  const checklist = await getLegalizationChecklist(jobOrderId);
+  const checklist = await fetchChecklistRows(jobOrderId);
 
   const required = checklist.filter((item) => item.is_required);
 

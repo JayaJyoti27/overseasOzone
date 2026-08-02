@@ -1,6 +1,10 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, ForbiddenError, NotFoundError } from "../../utils/AppError";
-import { EMPLOYER_OWNED_DOCUMENT_TYPES } from "../admin/legalizationDocuments";
+import {
+  EMPLOYER_OWNED_DOCUMENT_TYPES,
+  initializeLegalizationChecklist,
+  LEGALIZATION_REACHED_STATUSES,
+} from "../admin/legalizationDocuments";
 import { LegalizationDocument } from "../../types/legalizationDocument";
 
 /*
@@ -31,7 +35,34 @@ export async function getEmployerLegalizationDocuments(
     throw new DatabaseError("Unable to fetch legalization documents.", error);
   }
 
-  return data ?? [];
+  if (data && data.length > 0) {
+    return data;
+  }
+
+  const { data: jobOrder } = await supabase
+    .from("job_orders")
+    .select("status")
+    .eq("id", jobOrderId)
+    .single();
+
+  if (jobOrder && LEGALIZATION_REACHED_STATUSES.includes(jobOrder.status)) {
+    await initializeLegalizationChecklist(jobOrderId);
+
+    const { data: seeded, error: seededError } = await supabase
+      .from("job_order_legalization_documents")
+      .select("*")
+      .eq("job_order_id", jobOrderId)
+      .in("document_type", EMPLOYER_OWNED_DOCUMENT_TYPES)
+      .order("created_at", { ascending: true });
+
+    if (seededError) {
+      throw new DatabaseError("Unable to fetch legalization documents.", seededError);
+    }
+
+    return seeded ?? [];
+  }
+
+  return [];
 }
 
 /*
