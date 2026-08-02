@@ -141,6 +141,10 @@ describe("startLegalization", () => {
       { data: { status: "employer_approval_pending" }, error: null },
       { data: { id: JOB_ORDER_ID, status: "legalization_in_progress" }, error: null },
       { data: null, error: null },
+      // Checklist not yet seeded for this job order.
+      { data: null, error: { code: "PGRST116" } },
+      // Default checklist rows inserted.
+      { error: null },
     );
 
     const result = await JobOrderService.startLegalization(JOB_ORDER_ID, ADMIN_ID);
@@ -230,6 +234,15 @@ describe("full happy-path chain", () => {
         { data: { id: JOB_ORDER_ID, status: nextStatus }, error: null },
         { data: null, error: null },
       );
+
+      if (nextStatus === "legalization_in_progress") {
+        queueResponses(
+          // Checklist not yet seeded for this job order.
+          { data: null, error: { code: "PGRST116" } },
+          // Default checklist rows inserted.
+          { error: null },
+        );
+      }
 
       const result = await fn(JOB_ORDER_ID, ADMIN_ID);
 

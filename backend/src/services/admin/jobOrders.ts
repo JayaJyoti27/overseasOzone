@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
+import { initializeLegalizationChecklist } from "./legalizationDocuments";
 
 interface JobOrderFilters {
   page?: number;
@@ -314,13 +315,17 @@ export async function sendForEmployerApproval(jobOrderId: string, adminId: strin
 */
 
 export async function startLegalization(jobOrderId: string, adminId: string) {
-  return transitionJobOrderStatus(
+  const result = await transitionJobOrderStatus(
     jobOrderId,
     ["employer_approval_pending"],
     "legalization_in_progress",
     adminId,
     "Legalization Started",
   );
+
+  await initializeLegalizationChecklist(jobOrderId);
+
+  return result;
 }
 
 /*
