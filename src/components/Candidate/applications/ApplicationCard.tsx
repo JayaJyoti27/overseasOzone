@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { ArrowRight, Briefcase, CalendarDays, Globe, Trash2 } from "lucide-react";
 
@@ -72,10 +72,21 @@ function progress(status: string) {
 }
 
 export default function ApplicationCard({ application }: Props) {
+  const navigate = useNavigate();
   const withdraw = useWithdrawApplication();
 
+  function openDetails() {
+    navigate({ to: "/Candidates/applications/$id", params: { id: application.id } });
+  }
+
   return (
-    <Card className="rounded-2xl p-6">
+    <Card
+      onClick={openDetails}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && openDetails()}
+      className="cursor-pointer rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-lg"
+    >
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-bold">{application.job.title}</h2>
@@ -117,9 +128,9 @@ export default function ApplicationCard({ application }: Props) {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Button asChild>
+        <Button asChild onClick={(e) => e.stopPropagation()}>
           <Link
-            to="/Candidate/applications/$id"
+            to="/Candidates/applications/$id"
             params={{
               id: application.id,
             }}
@@ -130,7 +141,13 @@ export default function ApplicationCard({ application }: Props) {
         </Button>
 
         {application.status !== "withdrawn" && application.status !== "rejected" && (
-          <Button variant="destructive" onClick={() => withdraw.mutate(application.id)}>
+          <Button
+            variant="destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              withdraw.mutate(application.id);
+            }}
+          >
             <Trash2 className="mr-2 h-4 w-4" />
             Withdraw
           </Button>

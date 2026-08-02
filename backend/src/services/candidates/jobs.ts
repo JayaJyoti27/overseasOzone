@@ -22,7 +22,7 @@ interface JobFilters {
 |--------------------------------------------------------------------------
 */
 
-async function attachCompanyNames<T extends { job_order_id?: string | null }>(
+export async function attachCompanyNames<T extends { job_order_id?: string | null }>(
   jobs: T[],
 ): Promise<(T & { company: string | null; contact_email: string | null; contact_phone: string | null })[]> {
   const jobOrderIds = [...new Set(jobs.map((j) => j.job_order_id).filter(Boolean))] as string[];
@@ -59,6 +59,20 @@ async function attachCompanyNames<T extends { job_order_id?: string | null }>(
       contact_phone: employer?.phone ?? null,
     };
   });
+}
+
+export async function getJobOrderDetails(jobOrderId: string | null | undefined) {
+  if (!jobOrderId) return null;
+
+  const { data } = await supabase
+    .from("job_orders")
+    .select(
+      "vacancies, contract_duration, working_hours, accommodation, transport, food, benefits, requirements, remarks",
+    )
+    .eq("id", jobOrderId)
+    .maybeSingle();
+
+  return data ?? null;
 }
 
 /*
@@ -148,6 +162,11 @@ export async function getCandidateJob(candidateId: string, jobId: string) {
 
   const [withCompany] = await attachCompanyNames([data]);
 
+  // The `jobs` row is a slim board listing - vacancies, working hours,
+  // accommodation/transport/food, benefits, and qualifications only exist
+  // on the source job_orders row the employer actually filled out.
+  const jobOrder = await getJobOrderDetails(data.job_order_id);
+
   const { data: application } = await supabase
     .from("applications")
     .select("id,status")
@@ -164,6 +183,7 @@ export async function getCandidateJob(candidateId: string, jobId: string) {
 
   return {
     ...withCompany,
+    job_order: jobOrder,
     applied: !!application,
     application,
     saved: !!saved,

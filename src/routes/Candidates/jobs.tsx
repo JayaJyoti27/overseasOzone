@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
 import JobFilters from "@/components/Candidate/Jobs/JobFilters";
@@ -11,17 +12,42 @@ export const Route = createFileRoute("/Candidates/jobs")({
 });
 
 function JobsPage() {
+  const [search, setSearch] = useState("");
+  const [country, setCountry] = useState("");
+  const [category, setCategory] = useState("");
+
+  const filters = {
+    search: search || undefined,
+    country: country || undefined,
+    category: category || undefined,
+  };
+
+  const hasActiveFilters = !!search || !!country || !!category;
+
   return (
     <div className="grid gap-6 xl:grid-cols-4">
       <div className="space-y-6">
-        <JobSearch />
-        <JobFilters />
+        <JobSearch value={search} onChange={setSearch} />
+
+        <JobFilters
+          country={country}
+          category={category}
+          onCountryChange={setCountry}
+          onCategoryChange={setCategory}
+          onClear={() => {
+            setSearch("");
+            setCountry("");
+            setCategory("");
+          }}
+        />
+
         <SavedJobsSidebar />
       </div>
 
       <div className="space-y-6 xl:col-span-3">
-        <RecommendedJobs />
-        <JobList />
+        {!hasActiveFilters && <RecommendedJobs />}
+
+        <JobList filters={filters} />
       </div>
     </div>
   );

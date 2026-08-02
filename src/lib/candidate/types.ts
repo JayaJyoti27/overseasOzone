@@ -107,6 +107,31 @@ export interface Activity {
    Job
 ========================================================== */
 
+/**
+ * The employer-submitted fields that only exist on the source job_orders
+ * row, not on the slim `jobs` board-listing table. Only populated on the
+ * single-job/single-application detail fetch, not the list views.
+ */
+export interface JobOrderDetails {
+  vacancies?: number | null;
+
+  contract_duration?: string | null;
+
+  working_hours?: string | null;
+
+  accommodation?: boolean;
+
+  transport?: boolean;
+
+  food?: boolean;
+
+  benefits?: string | null;
+
+  requirements?: string | null;
+
+  remarks?: string | null;
+}
+
 export interface CandidateJob {
   id: string;
 
@@ -118,6 +143,8 @@ export interface CandidateJob {
   contact_email?: string | null;
 
   contact_phone?: string | null;
+
+  job_order?: JobOrderDetails | null;
 
   country?: string;
 

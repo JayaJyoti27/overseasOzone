@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import {
   Bookmark,
@@ -8,9 +8,7 @@ import {
   Briefcase,
   Building2,
   Globe,
-  MapPin,
   DollarSign,
-  Clock3,
   ArrowRight,
 } from "lucide-react";
 
@@ -28,6 +26,8 @@ interface Props {
 }
 
 export default function JobCard({ job }: Props) {
+  const navigate = useNavigate();
+
   const save = useSaveJob();
 
   const remove = useRemoveSavedJob();
@@ -38,7 +38,13 @@ export default function JobCard({ job }: Props) {
 
   const salary = formatJobSalary(job);
 
-  async function toggleSave() {
+  function openDetails() {
+    navigate({ to: "/Candidates/jobs/$id", params: { id: job.id } });
+  }
+
+  async function toggleSave(e: React.MouseEvent) {
+    e.stopPropagation();
+
     if (saved) {
       await remove.mutateAsync(job.id);
 
@@ -50,12 +56,20 @@ export default function JobCard({ job }: Props) {
     }
   }
 
-  async function handleApply() {
+  async function handleApply(e: React.MouseEvent) {
+    e.stopPropagation();
+
     await apply.mutateAsync(job.id);
   }
 
   return (
-    <Card className="rounded-2xl p-6 transition hover:shadow-lg">
+    <Card
+      onClick={openDetails}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && openDetails()}
+      className="cursor-pointer rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-lg"
+    >
       <div className="flex justify-between">
         <div>
           <div className="flex items-center gap-3">
@@ -113,7 +127,7 @@ export default function JobCard({ job }: Props) {
           {job.applied ? "Applied" : "Apply"}
         </Button>
 
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild onClick={(e) => e.stopPropagation()}>
           <Link
             to="/Candidates/jobs/$id"
             params={{

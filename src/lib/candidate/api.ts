@@ -61,7 +61,7 @@ export const updateProfile = async (payload: any) => {
 
 export const getJob = async (jobId: string) => {
   const { data } = await api.get(`/candidate/jobs/${jobId}`);
-  return data;
+  return data.data;
 };
 
 export const saveJob = async (jobId: string) => {
@@ -90,7 +90,7 @@ export const apply = async (jobId: string) => {
 
 export const getApplication = async (applicationId: string) => {
   const { data } = await api.get(`/candidate/applications/${applicationId}`);
-  return data;
+  return data.data;
 };
 
 export const withdrawApplication = async (applicationId: string) => {
@@ -99,7 +99,7 @@ export const withdrawApplication = async (applicationId: string) => {
 };
 export const getApplications = async () => {
   const response = await api.get("/candidate/applications");
-  return response.data.data;
+  return response.data.applications;
 };
 
 /* =========================================================
@@ -231,7 +231,7 @@ export const replaceDocument = async (id: string, formData: FormData) => {
 
   return data;
 };
-export const getJobs = async (params?: any) => {
+export const getJobs = async (params?: any): Promise<CandidateJob[]> => {
   const { data } = await api.get("/candidate/jobs", { params });
   return data.jobs; // was returning the whole response body — fixed
 };

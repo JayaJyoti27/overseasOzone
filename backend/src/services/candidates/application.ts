@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { attachCompanyNames, getJobOrderDetails } from "./jobs";
 
 interface ApplicationFilters {
   page?: number;
@@ -22,7 +23,7 @@ export async function getCandidateApplications(candidateId: string, filters: App
     .select(
       `
       *,
-      jobs(*)
+      job:jobs(*)
       `,
       {
         count: "exact",
@@ -46,8 +47,16 @@ export async function getCandidateApplications(candidateId: string, filters: App
     throw new DatabaseError("Unable to fetch applications.", error);
   }
 
+  // List view just needs company for display, not the full job_order
+  // detail breakdown (that's only fetched on the single-application page).
+  const jobs = await attachCompanyNames((data ?? []).map((a) => a.job).filter(Boolean));
+  const jobById = new Map(jobs.map((j) => [j.id, j]));
+
   return {
-    applications: data ?? [],
+    applications: (data ?? []).map((a) => ({
+      ...a,
+      job: a.job ? (jobById.get(a.job.id) ?? a.job) : null,
+    })),
     pagination: {
       page,
       limit,
@@ -69,7 +78,7 @@ export async function getCandidateApplication(candidateId: string, applicationId
     .select(
       `
       *,
-      jobs(*),
+      job:jobs(*),
       employers(*)
       `,
     )
@@ -81,7 +90,19 @@ export async function getCandidateApplication(candidateId: string, applicationId
     throw new NotFoundError("Application not found.");
   }
 
-  return data;
+  // The plain jobs(*) embed doesn't carry company/contact info (jobs has
+  // no such columns) or the employer's original job_order detail fields
+  // (working hours, accommodation/transport/food, benefits,
+  // qualifications) - same enrichment as the standalone job detail page,
+  // so an applied job's full info matches what the candidate saw when
+  // they applied.
+  const [enrichedJob] = data.job ? await attachCompanyNames([data.job]) : [null];
+  const jobOrder = data.job ? await getJobOrderDetails(data.job.job_order_id) : null;
+
+  return {
+    ...data,
+    job: enrichedJob ? { ...enrichedJob, job_order: jobOrder } : null,
+  };
 }
 
 /*

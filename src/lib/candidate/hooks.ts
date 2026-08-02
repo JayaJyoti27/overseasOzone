@@ -88,11 +88,11 @@ export function useProfileCompletion() {
    Jobs
 ========================================================== */
 
-export function useJobs() {
+export function useJobs(filters?: { search?: string; country?: string; category?: string }) {
   return useQuery({
-    queryKey: candidateKeys.jobs,
+    queryKey: [...candidateKeys.jobs, filters ?? {}],
 
-    queryFn: api.getJobs,
+    queryFn: () => api.getJobs(filters),
   });
 }
 
