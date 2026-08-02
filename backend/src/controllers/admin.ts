@@ -593,6 +593,46 @@ export async function approveForRecruitment(req: Request, res: Response) {
   }
 }
 
+export async function getJobOrderLegalizationChecklist(req: Request, res: Response) {
+  try {
+    const data = await AdminService.getLegalizationChecklist(String(req.params.id));
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function updateJobOrderLegalizationDocument(req: Request, res: Response) {
+  try {
+    const data = await AdminService.updateLegalizationDocument(
+      String(req.params.docId),
+      req.adminId!,
+      req.body,
+    );
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
 export async function openRecruitment(req: Request, res: Response) {
   try {
     const data = await AdminService.openRecruitment(String(req.params.id), req.adminId!);

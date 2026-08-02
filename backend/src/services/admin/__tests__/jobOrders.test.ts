@@ -28,6 +28,7 @@ vi.mock("../../../config/supabase", () => {
     eq: vi.fn(() => builder),
     insert: vi.fn(() => Promise.resolve(responseQueue.shift())),
     single: vi.fn(() => Promise.resolve(responseQueue.shift())),
+    order: vi.fn(() => Promise.resolve(responseQueue.shift())),
   };
 
   return { supabase: builder };
@@ -154,8 +155,17 @@ describe("startLegalization", () => {
 });
 
 describe("approveForRecruitment", () => {
-  it("moves legalization_in_progress -> approved_for_recruitment and stamps approved_at", async () => {
+  it("moves legalization_in_progress -> approved_for_recruitment and stamps approved_at when every required document is attested", async () => {
     queueResponses(
+      // isLegalizationComplete -> getLegalizationChecklist
+      {
+        data: [
+          { is_required: true, status: "attested" },
+          { is_required: true, status: "attested" },
+          { is_required: false, status: "pending" },
+        ],
+        error: null,
+      },
       { data: { status: "legalization_in_progress" }, error: null },
       {
         data: { id: JOB_ORDER_ID, status: "approved_for_recruitment", approved_at: "2026-08-01T00:00:00.000Z" },
@@ -168,6 +178,28 @@ describe("approveForRecruitment", () => {
 
     expect(result.status).toBe("approved_for_recruitment");
     expect(result.approved_at).toBeTruthy();
+  });
+
+  it("rejects the move when a required document is still not attested", async () => {
+    queueResponses({
+      data: [
+        { is_required: true, status: "attested" },
+        { is_required: true, status: "submitted" },
+      ],
+      error: null,
+    });
+
+    await expect(JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID)).rejects.toBeInstanceOf(
+      ConflictError,
+    );
+  });
+
+  it("rejects the move when the checklist was never seeded", async () => {
+    queueResponses({ data: [], error: null });
+
+    await expect(JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID)).rejects.toBeInstanceOf(
+      ConflictError,
+    );
   });
 });
 
@@ -229,6 +261,18 @@ describe("full happy-path chain", () => {
     let currentStatus = "requirement_submitted";
 
     for (const [nextStatus, fn] of chain) {
+      if (nextStatus === "approved_for_recruitment") {
+        // approveForRecruitment checks the checklist BEFORE the transition,
+        // unlike startLegalization's seeding which happens after.
+        queueResponses({
+          data: [
+            { is_required: true, status: "attested" },
+            { is_required: true, status: "attested" },
+          ],
+          error: null,
+        });
+      }
+
       queueResponses(
         { data: { status: currentStatus }, error: null },
         { data: { id: JOB_ORDER_ID, status: nextStatus }, error: null },

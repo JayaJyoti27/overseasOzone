@@ -26,6 +26,8 @@ import {
   approveForRecruitment,
   openRecruitment,
   closeRecruitment,
+  getJobOrderLegalizationChecklist,
+  updateJobOrderLegalizationDocument,
 } from "../controllers/admin";
 const router = Router();
 import {
@@ -110,6 +112,10 @@ router.patch("/job-orders/:id/clarification", requestJobOrderClarification);
 router.patch("/job-orders/:id/send-for-approval", sendForEmployerApproval);
 
 router.patch("/job-orders/:id/start-legalization", startLegalization);
+
+router.get("/job-orders/:id/legalization", getJobOrderLegalizationChecklist);
+
+router.patch("/job-orders/:id/legalization/:docId", updateJobOrderLegalizationDocument);
 
 router.patch("/job-orders/:id/approve-for-recruitment", approveForRecruitment);
 

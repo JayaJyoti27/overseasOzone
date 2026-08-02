@@ -1,6 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
-import { initializeLegalizationChecklist } from "./legalizationDocuments";
+import { initializeLegalizationChecklist, isLegalizationComplete } from "./legalizationDocuments";
 
 interface JobOrderFilters {
   page?: number;
@@ -337,6 +337,14 @@ export async function startLegalization(jobOrderId: string, adminId: string) {
 */
 
 export async function approveForRecruitment(jobOrderId: string, adminId: string) {
+  const complete = await isLegalizationComplete(jobOrderId);
+
+  if (!complete) {
+    throw new ConflictError(
+      "Cannot approve for recruitment until every required legalization document is attested.",
+    );
+  }
+
   return transitionJobOrderStatus(
     jobOrderId,
     ["legalization_in_progress"],
