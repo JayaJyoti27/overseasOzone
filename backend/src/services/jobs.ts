@@ -120,6 +120,8 @@ export async function create(employerId: string, body: CreateJobOrderDto) {
     status: "requirement_submitted",
 
     submitted_at: new Date().toISOString(),
+
+    is_deleted: false,
   };
 
   const { data, error } = await supabase.from("job_orders").insert(payload).select().single();
@@ -446,13 +448,13 @@ export async function getJobOrder(jobOrderId: string) {
       ),
       requirement:requirements(
         id,
-        title,
-        category
+        role,
+        sector
       )
     `,
     )
     .eq("id", jobOrderId)
-    .eq("is_deleted", false)
+    .or("is_deleted.is.null,is_deleted.eq.false")
     .single();
 
   if (error) {

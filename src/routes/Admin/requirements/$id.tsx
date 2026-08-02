@@ -8,6 +8,7 @@ import {
 } from "@/lib/admin/api";
 
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Loader2,
   ArrowLeft,
@@ -248,6 +249,9 @@ function RequirementDetails() {
 
   const [loading, setLoading] = useState(true);
   const [requirement, setRequirement] = useState<any>();
+  const [showClarifyBox, setShowClarifyBox] = useState(false);
+  const [clarifyNote, setClarifyNote] = useState("");
+  const [submittingClarify, setSubmittingClarify] = useState(false);
 
   useEffect(() => {
     load();
@@ -270,8 +274,17 @@ function RequirementDetails() {
   }
 
   async function clarify() {
-    await requestClarification(id, "Please provide additional details.");
-    load();
+    if (!clarifyNote.trim()) return;
+
+    setSubmittingClarify(true);
+    try {
+      await requestClarification(id, clarifyNote.trim());
+      setClarifyNote("");
+      setShowClarifyBox(false);
+      await load();
+    } finally {
+      setSubmittingClarify(false);
+    }
   }
 
   async function convert() {
@@ -527,6 +540,18 @@ function RequirementDetails() {
                     Choose how to move this requirement forward.
                   </p>
 
+                  {requirement.clarification_notes && (
+                    <div className="mt-5 rounded-2xl border border-orange-300/30 bg-orange-500/10 p-4">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-orange-300">
+                        <HelpCircle size={13} />
+                        Clarification sent to employer
+                      </p>
+                      <p className="mt-1.5 text-sm text-white/80">
+                        {requirement.clarification_notes}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="mt-6 space-y-3">
                     <Button
                       className="h-11 w-full justify-center gap-2 rounded-full bg-white text-sm font-semibold text-navy hover:bg-white/90"
@@ -535,14 +560,48 @@ function RequirementDetails() {
                       <ArrowRightLeft size={16} />
                       Convert to Job Order
                     </Button>
-                    <Button
-                      variant="secondary"
-                      className="h-11 w-full justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-sm font-medium text-white hover:bg-white/20"
-                      onClick={clarify}
-                    >
-                      <HelpCircle size={16} />
-                      Request Clarification
-                    </Button>
+
+                    {showClarifyBox ? (
+                      <div className="space-y-2 rounded-2xl border border-white/15 bg-white/10 p-3">
+                        <Textarea
+                          autoFocus
+                          placeholder="What does the employer need to clarify or fix?"
+                          value={clarifyNote}
+                          onChange={(e) => setClarifyNote(e.target.value)}
+                          className="min-h-[90px] resize-none rounded-xl border-white/15 bg-white/90 text-navy placeholder:text-ink/40"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="h-9 flex-1 rounded-full bg-white text-navy hover:bg-white/90"
+                            disabled={!clarifyNote.trim() || submittingClarify}
+                            onClick={clarify}
+                          >
+                            {submittingClarify ? "Sending…" : "Send"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-9 flex-1 rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/20"
+                            onClick={() => {
+                              setShowClarifyBox(false);
+                              setClarifyNote("");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        className="h-11 w-full justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-sm font-medium text-white hover:bg-white/20"
+                        onClick={() => setShowClarifyBox(true)}
+                      >
+                        <HelpCircle size={16} />
+                        Request Clarification
+                      </Button>
+                    )}
 
                     <div className="!mt-5 border-t border-white/10 pt-5">
                       <button

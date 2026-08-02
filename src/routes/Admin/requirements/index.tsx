@@ -83,7 +83,10 @@ function RequirementsPage() {
   }
 
   async function clarification(id: string) {
-    await requestClarification(id, "Please provide additional details.");
+    const note = window.prompt("What does the employer need to clarify or fix?");
+    if (!note || !note.trim()) return;
+
+    await requestClarification(id, note.trim());
     loadRequirements();
   }
 

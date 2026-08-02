@@ -73,6 +73,7 @@ function JobOrderDetails() {
 
   const [loading, setLoading] = useState(true);
   const [job, setJob] = useState<any>();
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [clarificationOpen, setClarificationOpen] = useState(false);
   const [clarificationNotes, setClarificationNotes] = useState("");
@@ -83,10 +84,13 @@ function JobOrderDetails() {
 
   async function load() {
     setLoading(true);
+    setLoadError(null);
 
     try {
       const data = await getJobOrder(id);
       setJob(data.data ?? data);
+    } catch (err: any) {
+      setLoadError(err?.response?.data?.message || err?.message || "Failed to load job order.");
     } finally {
       setLoading(false);
     }
@@ -118,6 +122,16 @@ function JobOrderDetails() {
       setActionPending(null);
     }
   }
+
+  if (!loading && loadError)
+    return (
+      <div className="flex h-[70vh] flex-col items-center justify-center gap-3 text-center">
+        <p className="text-sm font-medium text-red-600">{loadError}</p>
+        <Button variant="outline" className="rounded-full" onClick={load}>
+          Try again
+        </Button>
+      </div>
+    );
 
   if (loading || !job)
     return (

@@ -6,7 +6,8 @@ import { requirementStatusLabel, requirementStatusStyle } from "@/lib/employer/r
 import { statusLabel, statusStyle } from "@/lib/admin/jobOrderStatus";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Pencil } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -15,6 +16,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+import { RequirementEditForm } from "@/components/Employer/JobOrders/RequirementEditForm";
 
 export const Route = createFileRoute("/Employer/job-orders/$jobId")({
   component: JobOrderDetailsPage,
@@ -46,6 +48,7 @@ function JobOrderDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [details, setDetails] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     load();
@@ -107,10 +110,32 @@ function JobOrderDetailsPage() {
       </div>
 
       {/* Clarification banner - the one thing that needs the employer's attention */}
-      {requirement.status === "clarification_required" && requirement.clarification_notes && (
-        <div className="rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
-          <p className="text-sm font-semibold text-orange-800">Admin requested clarification</p>
-          <p className="mt-1 text-sm text-orange-700">{requirement.clarification_notes}</p>
+      {requirement.status === "clarification_required" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
+            <p className="text-sm font-semibold text-orange-800">Admin requested clarification</p>
+            <p className="mt-1 text-sm text-orange-700">
+              {requirement.clarification_notes || "Please review and update this requirement."}
+            </p>
+
+            {!editing && (
+              <Button size="sm" className="mt-3" onClick={() => setEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit &amp; Resubmit
+              </Button>
+            )}
+          </div>
+
+          {editing && (
+            <RequirementEditForm
+              requirement={requirement}
+              onCancel={() => setEditing(false)}
+              onSaved={() => {
+                setEditing(false);
+                load();
+              }}
+            />
+          )}
         </div>
       )}
 

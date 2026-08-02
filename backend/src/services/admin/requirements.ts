@@ -286,6 +286,8 @@ export async function convertRequirementToJobOrder(requirementId: string, adminI
       benefits: requirement.benefits ?? null,
 
       status: "requirement_submitted",
+
+      is_deleted: false,
     })
     .select()
     .single();

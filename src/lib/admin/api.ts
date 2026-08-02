@@ -2,7 +2,7 @@ import axios from "axios";
 import { supabase } from "@/lib/supabase";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://172.20.10.3:3001/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3001/api",
 
   withCredentials: true,
   headers: {
