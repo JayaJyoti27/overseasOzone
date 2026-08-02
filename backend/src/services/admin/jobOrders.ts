@@ -105,7 +105,21 @@ export async function getJobOrder(jobOrderId: string) {
     .eq("id", jobOrderId)
     .single();
 
-  if (error || !data) {
+  if (error) {
+    // PGRST116 = "no rows" from PostgREST's .single() - genuinely missing/deleted row.
+    // Anything else (bad embed, RLS/permissions, column mismatch, etc.) is a real
+    // server error and should say so instead of masquerading as "not found".
+    if (error.code === "PGRST116") {
+      throw new NotFoundError("Job order not found.");
+    }
+
+    throw new DatabaseError(
+      `Unable to load job order: ${error.message}`,
+      { code: error.code, details: error.details, hint: error.hint },
+    );
+  }
+
+  if (!data) {
     throw new NotFoundError("Job order not found.");
   }
 

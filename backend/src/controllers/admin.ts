@@ -471,10 +471,12 @@ export async function getJobOrder(req: Request, res: Response) {
       data,
     });
   } catch (err: any) {
-    return res.status(404).json({
+    return res.status(err.statusCode ?? 500).json({
       success: false,
 
       message: err.message,
+
+      details: err.details,
     });
   }
 }

@@ -194,7 +194,12 @@ export async function getEmployerRequirementDetails(employerId: string, requirem
 
       label: "Clarification",
 
-      completed: requirement.status === "clarification_required",
+      // Not every requirement needs clarification — but once the requirement
+      // has moved past this point in the pipeline (approved/converted), or is
+      // currently sitting here, it should read as passed, not skipped/grey.
+      completed: ["clarification_required", "approved", "converted"].includes(
+        requirement.status,
+      ),
     },
 
     {
