@@ -446,7 +446,7 @@ export async function getJobOrder(jobOrderId: string) {
         email,
         phone
       ),
-      requirement:requirements(
+      requirement:requirements!requirement_id(
         id,
         role,
         sector

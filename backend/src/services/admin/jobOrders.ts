@@ -99,7 +99,7 @@ export async function getJobOrder(jobOrderId: string) {
 
       employer:employers(*),
 
-      requirement:requirements(*)
+      requirement:requirements!requirement_id(*)
     `,
     )
     .eq("id", jobOrderId)
