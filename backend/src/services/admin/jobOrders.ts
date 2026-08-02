@@ -125,6 +125,26 @@ export async function getJobOrder(jobOrderId: string) {
     throw new NotFoundError("Job order not found.");
   }
 
+  // Self-heal: job orders that reached recruitment_open before the publish
+  // step existed (or where a publish attempt silently failed) would
+  // otherwise stay invisible to candidates forever, since nothing else
+  // re-triggers openRecruitment() for an already-open job order. Fixing it
+  // up here means simply opening the job order in the admin panel repairs
+  // it - no manual DB work, same pattern as the legalization checklist
+  // self-heal.
+  if (data.status === "recruitment_open") {
+    const { data: published } = await supabase
+      .from("jobs")
+      .select("id")
+      .eq("job_order_id", jobOrderId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (!published) {
+      await publishJobOrderToCandidates(jobOrderId);
+    }
+  }
+
   return data;
 }
 /*
