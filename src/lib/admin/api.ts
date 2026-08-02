@@ -98,6 +98,31 @@ export async function updateJobOrder(id: string, payload: Record<string, any>) {
   return res.data.data;
 }
 
+export async function startAdminReview(id: string) {
+  const res = await api.patch(`/admin/job-orders/${id}/review`);
+  return res.data.data;
+}
+
+export async function requestJobOrderClarification(id: string, notes: string) {
+  const res = await api.patch(`/admin/job-orders/${id}/clarification`, { notes });
+  return res.data.data;
+}
+
+export async function sendForEmployerApproval(id: string) {
+  const res = await api.patch(`/admin/job-orders/${id}/send-for-approval`);
+  return res.data.data;
+}
+
+export async function startLegalization(id: string) {
+  const res = await api.patch(`/admin/job-orders/${id}/start-legalization`);
+  return res.data.data;
+}
+
+export async function approveForRecruitment(id: string) {
+  const res = await api.patch(`/admin/job-orders/${id}/approve-for-recruitment`);
+  return res.data.data;
+}
+
 export async function openRecruitment(id: string) {
   const res = await api.patch(`/admin/job-orders/${id}/open`);
   return res.data.data;

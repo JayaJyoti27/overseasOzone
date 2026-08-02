@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   getRequirements,
-  approveRequirement,
   rejectRequirement,
   requestClarification,
   convertRequirement,
@@ -15,7 +14,6 @@ import {
   Search,
   FileText,
   Inbox,
-  Check,
   HelpCircle,
   ArrowRightLeft,
   X,
@@ -79,11 +77,6 @@ function RequirementsPage() {
     }
   }
 
-  async function approve(id: string) {
-    await approveRequirement(id);
-    loadRequirements();
-  }
-
   async function reject(id: string) {
     await rejectRequirement(id, "Rejected by Admin");
     loadRequirements();
@@ -95,8 +88,14 @@ function RequirementsPage() {
   }
 
   async function convert(id: string) {
-    await convertRequirement(id);
-    loadRequirements();
+    const result = await convertRequirement(id);
+    const jobOrderId = result?.jobOrder?.id;
+
+    if (jobOrderId) {
+      navigate({ to: "/Admin/job-orders/$id", params: { id: jobOrderId } });
+    } else {
+      loadRequirements();
+    }
   }
 
   const filtered = useMemo(() => {
@@ -202,41 +201,53 @@ function RequirementsPage() {
                 className="flex items-center justify-end gap-1.5"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Button
-                  size="icon"
-                  title="Approve"
-                  className="h-8 w-8 rounded-full bg-navy hover:bg-blue"
-                  onClick={() => approve(req.id)}
-                >
-                  <Check size={14} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="secondary"
-                  title="Request clarification"
-                  className="h-8 w-8 rounded-full bg-blue-wash text-blue hover:bg-blue-soft"
-                  onClick={() => clarification(req.id)}
-                >
-                  <HelpCircle size={14} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  title="Convert to job order"
-                  className="h-8 w-8 rounded-full border-border hover:border-blue hover:text-blue"
-                  onClick={() => convert(req.id)}
-                >
-                  <ArrowRightLeft size={14} />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  title="Reject"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => reject(req.id)}
-                >
-                  <X size={14} />
-                </Button>
+                {req.status === "converted" ? (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    title="View job order"
+                    className="h-8 w-8 rounded-full border-border hover:border-blue hover:text-blue"
+                    onClick={() =>
+                      navigate({
+                        to: "/Admin/job-orders/$id",
+                        params: { id: req.converted_job_order_id },
+                      })
+                    }
+                  >
+                    <ArrowRightLeft size={14} />
+                  </Button>
+                ) : req.status === "rejected" ? (
+                  <span className="text-xs font-medium text-ink/40">Rejected</span>
+                ) : (
+                  <>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      title="Request clarification"
+                      className="h-8 w-8 rounded-full bg-blue-wash text-blue hover:bg-blue-soft"
+                      onClick={() => clarification(req.id)}
+                    >
+                      <HelpCircle size={14} />
+                    </Button>
+                    <Button
+                      size="icon"
+                      title="Convert to job order"
+                      className="h-8 w-8 rounded-full bg-navy hover:bg-blue"
+                      onClick={() => convert(req.id)}
+                    >
+                      <ArrowRightLeft size={14} />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="destructive"
+                      title="Reject"
+                      className="h-8 w-8 rounded-full"
+                      onClick={() => reject(req.id)}
+                    >
+                      <X size={14} />
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           ))

@@ -234,8 +234,8 @@ export async function convertRequirementToJobOrder(requirementId: string, adminI
     throw new NotFoundError("Requirement not found.");
   }
 
-  if (requirement.status !== "approved") {
-    throw new ConflictError("Only approved requirements can be converted.");
+  if (requirement.status === "rejected") {
+    throw new ConflictError("A rejected requirement cannot be converted.");
   }
 
   if (requirement.converted_job_order_id) {

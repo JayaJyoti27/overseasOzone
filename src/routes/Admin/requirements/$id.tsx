@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   getRequirement,
-  approveRequirement,
   rejectRequirement,
   requestClarification,
   convertRequirement,
@@ -24,7 +23,6 @@ import {
   FileText,
   GraduationCap,
   MessageSquareText,
-  CheckCircle2,
   HelpCircle,
   ArrowRightLeft,
   XCircle,
@@ -57,12 +55,11 @@ function StatusPill({ status }: { status?: string }) {
   );
 }
 
-const STEP_ORDER = ["pending", "clarification", "approved", "converted"];
+const STEP_ORDER = ["pending", "clarification", "converted"];
 const STEP_LABELS: Record<string, string> = {
   pending: "Submitted",
   clarification: "Clarification requested",
-  approved: "Approved",
-  converted: "Converted",
+  converted: "Converted to Job Order",
 };
 
 function StatusTimeline({ status }: { status?: string }) {
@@ -267,11 +264,6 @@ function RequirementDetails() {
     }
   }
 
-  async function approve() {
-    await approveRequirement(id);
-    load();
-  }
-
   async function reject() {
     await rejectRequirement(id, "Rejected by Admin");
     load();
@@ -283,8 +275,14 @@ function RequirementDetails() {
   }
 
   async function convert() {
-    await convertRequirement(id);
-    load();
+    const result = await convertRequirement(id);
+    const jobOrderId = result?.jobOrder?.id;
+
+    if (jobOrderId) {
+      navigate({ to: "/Admin/job-orders/$id", params: { id: jobOrderId } });
+    } else {
+      load();
+    }
   }
 
   if (loading || !requirement)
@@ -494,46 +492,70 @@ function RequirementDetails() {
 
             {/* Decision panel */}
             <div className="rounded-[28px] border border-navy bg-navy p-8 text-white shadow-[0_20px_50px_-28px_rgba(11,31,58,0.6)]">
-              <h3 className="font-display text-base font-semibold">Decision</h3>
-              <p className="mt-1.5 text-xs text-white/50">
-                Choose how to move this requirement forward.
-              </p>
+              {requirement.status === "converted" && requirement.converted_job_order_id ? (
+                <>
+                  <h3 className="font-display text-base font-semibold">Converted</h3>
+                  <p className="mt-1.5 text-xs text-white/50">
+                    This requirement is now a Job Order. Push it through the workflow from there.
+                  </p>
+                  <div className="mt-6">
+                    <Button
+                      className="h-11 w-full justify-center gap-2 rounded-full bg-white text-sm font-semibold text-navy hover:bg-white/90"
+                      onClick={() =>
+                        navigate({
+                          to: "/Admin/job-orders/$id",
+                          params: { id: requirement.converted_job_order_id },
+                        })
+                      }
+                    >
+                      <ArrowRightLeft size={16} />
+                      View Job Order
+                    </Button>
+                  </div>
+                </>
+              ) : requirement.status === "rejected" ? (
+                <>
+                  <h3 className="font-display text-base font-semibold">Rejected</h3>
+                  <p className="mt-1.5 text-xs text-white/50">
+                    This requirement was rejected and can no longer be converted.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-display text-base font-semibold">Decision</h3>
+                  <p className="mt-1.5 text-xs text-white/50">
+                    Choose how to move this requirement forward.
+                  </p>
 
-              <div className="mt-6 space-y-3">
-                <Button
-                  className="h-11 w-full justify-center gap-2 rounded-full bg-white text-sm font-semibold text-navy hover:bg-white/90"
-                  onClick={approve}
-                >
-                  <CheckCircle2 size={16} />
-                  Approve
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="h-11 w-full justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-sm font-medium text-white hover:bg-white/20"
-                  onClick={clarify}
-                >
-                  <HelpCircle size={16} />
-                  Request Clarification
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="h-11 w-full justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-sm font-medium text-white hover:bg-white/20"
-                  onClick={convert}
-                >
-                  <ArrowRightLeft size={16} />
-                  Convert to Job Order
-                </Button>
+                  <div className="mt-6 space-y-3">
+                    <Button
+                      className="h-11 w-full justify-center gap-2 rounded-full bg-white text-sm font-semibold text-navy hover:bg-white/90"
+                      onClick={convert}
+                    >
+                      <ArrowRightLeft size={16} />
+                      Convert to Job Order
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      className="h-11 w-full justify-center gap-2 rounded-full border border-white/15 bg-white/10 text-sm font-medium text-white hover:bg-white/20"
+                      onClick={clarify}
+                    >
+                      <HelpCircle size={16} />
+                      Request Clarification
+                    </Button>
 
-                <div className="!mt-5 border-t border-white/10 pt-5">
-                  <button
-                    onClick={reject}
-                    className="flex w-full items-center justify-center gap-2 rounded-full text-sm font-medium text-red-300 transition hover:text-red-200"
-                  >
-                    <XCircle size={16} />
-                    Reject requirement
-                  </button>
-                </div>
-              </div>
+                    <div className="!mt-5 border-t border-white/10 pt-5">
+                      <button
+                        onClick={reject}
+                        className="flex w-full items-center justify-center gap-2 rounded-full text-sm font-medium text-red-300 transition hover:text-red-200"
+                      >
+                        <XCircle size={16} />
+                        Reject requirement
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
