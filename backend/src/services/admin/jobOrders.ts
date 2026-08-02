@@ -114,10 +114,11 @@ export async function getJobOrder(jobOrderId: string) {
       throw new NotFoundError("Job order not found.");
     }
 
-    throw new DatabaseError(
-      `Unable to load job order: ${error.message}`,
-      { code: error.code, details: error.details, hint: error.hint },
-    );
+    throw new DatabaseError(`Unable to load job order: ${error.message}`, {
+      code: error.code,
+      details: error.details,
+      hint: error.hint,
+    });
   }
 
   if (!data) {
@@ -275,7 +276,11 @@ export async function startAdminReview(jobOrderId: string, adminId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function requestJobOrderClarification(jobOrderId: string, adminId: string, notes: string) {
+export async function requestJobOrderClarification(
+  jobOrderId: string,
+  adminId: string,
+  notes: string,
+) {
   return transitionJobOrderStatus(
     jobOrderId,
     ["under_admin_review"],
@@ -375,20 +380,109 @@ export async function approveForRecruitment(jobOrderId: string, adminId: string)
 
 /*
 |--------------------------------------------------------------------------
+| Publish / Unpublish to Candidate-Facing Job Board
+|--------------------------------------------------------------------------
+| The candidate "Apply for Jobs" pages read from the separate `jobs` table
+| (filtered to status = "active"), not from `job_orders` directly. Nothing
+| was ever writing to that table on the real admin approval path - there
+| was a leftover "auto publish" insert wired to a different, unused legacy
+| status-update endpoint, firing at approved_for_recruitment instead of
+| here. Candidates should see a job order once it's actually open for
+| recruitment (recruitment_open), not one step earlier while it's still
+| only internally approved - so this fires from openRecruitment below.
+|
+| Upserts on job_order_id so re-opening a previously-closed job order
+| reactivates the same listing instead of creating a duplicate. Failure to
+| publish is logged but never blocks the status transition itself - the
+| job_orders row is the source of truth, `jobs` is just a derived read
+| cache for the candidate portal.
+|--------------------------------------------------------------------------
+*/
+
+async function publishJobOrderToCandidates(jobOrderId: string) {
+  const { data: jobOrder, error } = await supabase
+    .from("job_orders")
+    .select(
+      `
+      *,
+      employer:employers(company_name, email, phone)
+    `,
+    )
+    .eq("id", jobOrderId)
+    .single();
+
+  if (error || !jobOrder) {
+    console.error("Unable to load job order for publishing:", error);
+    return;
+  }
+
+  const { data: existing } = await supabase
+    .from("jobs")
+    .select("id")
+    .eq("job_order_id", jobOrderId)
+    .maybeSingle();
+
+  const payload = {
+    employer_id: jobOrder.employer_id,
+    job_order_id: jobOrder.id,
+    title: jobOrder.title,
+    company: jobOrder.employer?.company_name ?? null,
+    category: jobOrder.category ?? null,
+    country: jobOrder.country ?? null,
+    description: jobOrder.job_description ?? null,
+    requirements: jobOrder.requirements ?? null,
+    benefits: jobOrder.benefits ?? null,
+    salary: jobOrder.salary_min ?? jobOrder.salary_max ?? null,
+    currency: jobOrder.currency ?? null,
+    contact_email: jobOrder.employer?.email ?? null,
+    contact_phone: jobOrder.employer?.phone ?? null,
+    status: "active",
+    posted_at: new Date().toISOString(),
+  };
+
+  const { error: publishError } = existing
+    ? await supabase.from("jobs").update(payload).eq("id", existing.id)
+    : await supabase.from("jobs").insert(payload);
+
+  if (publishError) {
+    console.error("Unable to publish job order to candidate job board:", publishError);
+  }
+}
+
+async function unpublishJobOrderFromCandidates(jobOrderId: string) {
+  const { error } = await supabase
+    .from("jobs")
+    .update({ status: "closed" })
+    .eq("job_order_id", jobOrderId);
+
+  if (error) {
+    console.error("Unable to unpublish job order from candidate job board:", error);
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
 | Open Recruitment
 |--------------------------------------------------------------------------
 | approved_for_recruitment -> recruitment_open
+|
+| This is the point candidates should start seeing the job - so it also
+| publishes/reactivates the listing on the candidate job board.
 |--------------------------------------------------------------------------
 */
 
 export async function openRecruitment(jobOrderId: string, adminId: string) {
-  return transitionJobOrderStatus(
+  const result = await transitionJobOrderStatus(
     jobOrderId,
     ["approved_for_recruitment"],
     "recruitment_open",
     adminId,
     "Recruitment Opened",
   );
+
+  await publishJobOrderToCandidates(jobOrderId);
+
+  return result;
 }
 
 /*
@@ -396,15 +490,22 @@ export async function openRecruitment(jobOrderId: string, adminId: string) {
 | Close Recruitment
 |--------------------------------------------------------------------------
 | recruitment_open -> recruitment_closed
+|
+| Pulls the listing back off the candidate job board so it stops showing
+| as open once recruitment is closed.
 |--------------------------------------------------------------------------
 */
 
 export async function closeRecruitment(jobOrderId: string, adminId: string) {
-  return transitionJobOrderStatus(
+  const result = await transitionJobOrderStatus(
     jobOrderId,
     ["recruitment_open"],
     "recruitment_closed",
     adminId,
     "Recruitment Closed",
   );
+
+  await unpublishJobOrderFromCandidates(jobOrderId);
+
+  return result;
 }

@@ -28,6 +28,7 @@ vi.mock("../../../config/supabase", () => {
     eq: vi.fn(() => builder),
     insert: vi.fn(() => Promise.resolve(responseQueue.shift())),
     single: vi.fn(() => Promise.resolve(responseQueue.shift())),
+    maybeSingle: vi.fn(() => Promise.resolve(responseQueue.shift())),
     order: vi.fn(() => Promise.resolve(responseQueue.shift())),
   };
 
@@ -92,7 +93,14 @@ describe("requestJobOrderClarification", () => {
   it("moves under_admin_review -> clarification_required and stores the notes as remarks", async () => {
     queueResponses(
       { data: { status: "under_admin_review" }, error: null },
-      { data: { id: JOB_ORDER_ID, status: "clarification_required", remarks: "Missing salary range" }, error: null },
+      {
+        data: {
+          id: JOB_ORDER_ID,
+          status: "clarification_required",
+          remarks: "Missing salary range",
+        },
+        error: null,
+      },
       { data: null, error: null },
     );
 
@@ -158,7 +166,12 @@ describe("startLegalization", () => {
     queueResponses(
       { data: { status: "employer_approval_pending" }, error: null },
       {
-        data: { id: JOB_ORDER_ID, status: "legalization_in_progress", employer_id: "employer-1", title: "Welder" },
+        data: {
+          id: JOB_ORDER_ID,
+          status: "legalization_in_progress",
+          employer_id: "employer-1",
+          title: "Welder",
+        },
         error: null,
       },
       { data: null, error: null },
@@ -198,7 +211,11 @@ describe("approveForRecruitment", () => {
       },
       { data: { status: "legalization_in_progress" }, error: null },
       {
-        data: { id: JOB_ORDER_ID, status: "approved_for_recruitment", approved_at: "2026-08-01T00:00:00.000Z" },
+        data: {
+          id: JOB_ORDER_ID,
+          status: "approved_for_recruitment",
+          approved_at: "2026-08-01T00:00:00.000Z",
+        },
         error: null,
       },
       { data: null, error: null },
@@ -219,17 +236,17 @@ describe("approveForRecruitment", () => {
       error: null,
     });
 
-    await expect(JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID)).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(
+      JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID),
+    ).rejects.toBeInstanceOf(ConflictError);
   });
 
   it("rejects the move when the checklist was never seeded", async () => {
     queueResponses({ data: [], error: null });
 
-    await expect(JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID)).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(
+      JobOrderService.approveForRecruitment(JOB_ORDER_ID, ADMIN_ID),
+    ).rejects.toBeInstanceOf(ConflictError);
   });
 });
 
@@ -239,6 +256,14 @@ describe("openRecruitment", () => {
       { data: { status: "approved_for_recruitment" }, error: null },
       { data: { id: JOB_ORDER_ID, status: "recruitment_open" }, error: null },
       { data: null, error: null },
+      // publishJobOrderToCandidates: load job order (+employer), check for
+      // an existing jobs row, then insert since none exists yet.
+      {
+        data: { id: JOB_ORDER_ID, employer_id: "employer-1", title: "Nurse" },
+        error: null,
+      },
+      { data: null, error: null },
+      { error: null },
     );
 
     const result = await JobOrderService.openRecruitment(JOB_ORDER_ID, ADMIN_ID);
@@ -314,6 +339,19 @@ describe("full happy-path chain", () => {
           // Checklist not yet seeded for this job order.
           { data: null, error: { code: "PGRST116" } },
           // Default checklist rows inserted.
+          { error: null },
+        );
+      }
+
+      if (nextStatus === "recruitment_open") {
+        queueResponses(
+          // publishJobOrderToCandidates: load job order (+employer), check
+          // for an existing jobs row, then insert since none exists yet.
+          {
+            data: { id: JOB_ORDER_ID, employer_id: "employer-1", title: "Nurse" },
+            error: null,
+          },
+          { data: null, error: null },
           { error: null },
         );
       }
