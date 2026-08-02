@@ -77,7 +77,7 @@ export async function getRequirements(params?: any) {
     params,
   });
 
-  return data.data ?? data;
+  return data.requirements ?? data.data ?? [];
 }
 
 export async function getRequirement(id: string) {

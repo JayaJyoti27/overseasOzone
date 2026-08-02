@@ -1,26 +1,34 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getEmployer, suspendEmployer, activateEmployer } from "@/lib/admin/api";
-import { Loader2, FileText, Image as ImageIcon } from "lucide-react";
+import {
+  Loader2,
+  FileText,
+  Image as ImageIcon,
+  CheckCircle2,
+  Ban,
+  AlertCircle,
+  ClipboardList,
+} from "lucide-react";
 
 export const Route = createFileRoute("/Admin/employers/$id")({
   component: EmployerDetails,
 });
 
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-emerald-50 text-emerald-700",
-  approved: "bg-emerald-50 text-emerald-700",
-  pending: "bg-amber-50 text-amber-700",
-  suspended: "bg-red-50 text-red-700",
-  rejected: "bg-red-50 text-red-700",
+  active: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/15",
+  approved: "bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/15",
+  pending: "bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/15",
+  suspended: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/15",
+  rejected: "bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/15",
 };
 
 function StatusPill({ status }: { status?: string }) {
   const key = (status || "").toLowerCase();
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-        STATUS_STYLES[key] ?? "bg-blue-wash text-blue"
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+        STATUS_STYLES[key] ?? "bg-blue-wash text-blue ring-1 ring-inset ring-blue/15"
       }`}
     >
       {status || "-"}
@@ -48,9 +56,9 @@ function Panel({
   className?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-border bg-white p-5 ${className}`}>
-      <h3 className="font-display text-base font-semibold text-navy">{title}</h3>
-      <div className="mt-3">{children}</div>
+    <div className={`rounded-2xl border border-border bg-white p-6 m-6 shadow-sm ${className}`}>
+      <h3 className="font-display text-base font-semibold tracking-tight text-navy">{title}</h3>
+      <div className="mt-4">{children}</div>
     </div>
   );
 }
@@ -66,9 +74,11 @@ function DocCard({ doc }: { doc: any }) {
       href={doc.file_url}
       target="_blank"
       rel="noreferrer"
-      className="flex flex-col items-center gap-2 rounded-lg border border-border p-3.5 text-center transition hover:border-blue hover:shadow-sm"
+      className="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-white p-4 text-center transition hover:-translate-y-0.5 hover:border-blue/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue/40"
     >
-      <Icon className="text-blue" size={26} strokeWidth={1.6} />
+      <span className="grid h-11 w-11 place-items-center rounded-full bg-blue-wash text-blue transition group-hover:bg-blue group-hover:text-white">
+        <Icon size={20} strokeWidth={1.6} />
+      </span>
       <p className="text-xs font-medium leading-tight text-navy line-clamp-2">
         {doc.document_type?.replace(/_/g, " ") || doc.file_name}
       </p>
@@ -138,22 +148,39 @@ function EmployerDetails() {
     );
   }
 
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
-  if (!employer) return <p className="text-sm text-ink">Employer not found.</p>;
+  if (error) {
+    return (
+      <div className="mx-auto flex max-w-4xl items-center gap-2.5 rounded-2xl border border-red-100 bg-red-50 px-5 py-4 text-sm text-red-700">
+        <AlertCircle size={18} className="shrink-0" />
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (!employer) {
+    return (
+      <div className="mx-auto flex max-w-4xl items-center gap-2.5 rounded-2xl border border-border bg-white px-5 py-4 text-sm text-ink">
+        <AlertCircle size={18} className="shrink-0 text-ink/50" />
+        <p>Employer not found.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
+    <div className="mx-auto max-w-4xl space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="flex h-13 w-13 h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl bg-blue-wash text-lg font-semibold text-blue">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-white p-6 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-wash text-lg font-semibold text-blue">
             {initials(employer.company_name)}
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue mt-8">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue">
               Employer details
             </p>
-            <h1 className="font-display text-xl font-bold text-navy">{employer.company_name}</h1>
+            <h1 className="mt-1 font-display text-xl font-bold leading-tight text-navy">
+              {employer.company_name}
+            </h1>
           </div>
         </div>
         <StatusPill status={employer.status} />
@@ -161,7 +188,7 @@ function EmployerDetails() {
 
       {/* Company info */}
       <Panel title="Company information">
-        <div className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
           <Info label="Company" value={employer.company_name} />
           <Info label="Email" value={employer.email} />
           <Info label="Country" value={employer.country} />
@@ -184,43 +211,59 @@ function EmployerDetails() {
       {/* Requirements */}
       <Panel title="Submitted requirements">
         {employer.requirements?.length ? (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {employer.requirements.map((req: any) => (
               <div
                 key={req.id}
-                className="flex items-center justify-between rounded-lg border border-border px-3.5 py-2.5 text-sm transition hover:border-blue"
+                className="flex items-center justify-between rounded-xl border border-border px-4 py-3 text-sm transition hover:border-blue/40 hover:bg-blue-wash/20"
               >
                 <div>
                   <h4 className="text-sm font-medium text-navy">{req.role}</h4>
-                  <p className="text-xs text-ink">{req.country}</p>
+                  <p className="text-xs text-ink/70">{req.country}</p>
                 </div>
                 <StatusPill status={req.status} />
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-ink">No requirements submitted.</p>
+          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-wash text-blue">
+              <ClipboardList size={18} />
+            </span>
+            <p className="text-sm text-ink">No requirements submitted.</p>
+          </div>
         )}
       </Panel>
 
       {/* Actions - bottom, compact */}
       <Panel title="Actions">
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={activate}
             disabled={actionPending}
-            className="h-9 rounded-full bg-blue-wash px-4 text-sm font-medium text-blue transition hover:bg-blue-soft disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-blue-wash px-4 text-sm font-medium text-blue transition hover:bg-blue-soft disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {actionPending ? (
+              <Loader2 className="animate-spin" size={15} />
+            ) : (
+              <CheckCircle2 size={15} />
+            )}
             {actionPending ? "Working…" : "Activate employer"}
           </button>
           <button
             onClick={suspend}
             disabled={actionPending}
-            className="h-9 rounded-full bg-red-50 px-4 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-red-50 px-4 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {actionPending ? <Loader2 className="animate-spin" size={15} /> : <Ban size={15} />}
             {actionPending ? "Working…" : "Suspend employer"}
           </button>
-          {actionError && <p className="text-sm text-red-600">{actionError}</p>}
+          {actionError && (
+            <p className="flex items-center gap-1.5 text-sm text-red-600">
+              <AlertCircle size={14} />
+              {actionError}
+            </p>
+          )}
         </div>
       </Panel>
     </div>
@@ -230,8 +273,8 @@ function EmployerDetails() {
 function Info({ label, value }: { label: string; value?: string }) {
   return (
     <div>
-      <p className="text-xs text-ink/60">{label}</p>
-      <p className="truncate text-sm text-navy">{value || "-"}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-ink/50">{label}</p>
+      <p className="mt-1 truncate text-sm text-navy">{value || "-"}</p>
     </div>
   );
 }

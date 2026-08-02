@@ -10,36 +10,52 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, FileText, Inbox } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  FileText,
+  Inbox,
+  Check,
+  HelpCircle,
+  ArrowRightLeft,
+  X,
+} from "lucide-react";
 import { DotGrid, Blob } from "@/components/site/decor";
 
 export const Route = createFileRoute("/Admin/requirements/")({
   component: RequirementsPage,
 });
 
-const STATUS_STYLES: Record<string, string> = {
-  approved: "bg-emerald-50 text-emerald-700",
-  converted: "bg-emerald-50 text-emerald-700",
-  pending: "bg-amber-50 text-amber-700",
-  clarification: "bg-amber-50 text-amber-700",
-  rejected: "bg-red-50 text-red-700",
+const DOT_COLORS: Record<string, string> = {
+  approved: "bg-emerald-500",
+  converted: "bg-emerald-500",
+  pending: "bg-amber-500",
+  clarification: "bg-amber-500",
+  rejected: "bg-red-500",
 };
 
 function StatusPill({ status }: { status?: string }) {
   const key = (status || "").toLowerCase();
   return (
-    <span
-      className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
-        STATUS_STYLES[key] ?? "bg-blue-wash text-blue"
-      }`}
-    >
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-navy">
+      <span className={`h-1.5 w-1.5 rounded-full ${DOT_COLORS[key] ?? "bg-blue"}`} />
       {status || "-"}
     </span>
   );
 }
 
+function initials(name?: string) {
+  if (!name) return "??";
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w: string) => w[0]?.toUpperCase())
+    .join("");
+}
+
 // header + every row share this grid so columns always line up and fill width
-const GRID_COLS = "grid-cols-[1.2fr_1.1fr_0.9fr_0.8fr_0.9fr_2fr]";
+const GRID_COLS = "grid-cols-[1.3fr_1.1fr_0.8fr_0.8fr_1fr_1.9fr]";
 
 function RequirementsPage() {
   const navigate = useNavigate();
@@ -114,14 +130,17 @@ function RequirementsPage() {
               <FileText className="h-3.5 w-3.5" /> Requirements
             </span>
             <h1 className="mt-3 font-display text-3xl font-bold text-navy">Requirements</h1>
-            <p className="mt-1 text-ink">Review employer requirements</p>
+            <p className="mt-1 text-ink">
+              {filtered.length} of {requirements.length} requirement
+              {requirements.length === 1 ? "" : "s"} · review and route employer submissions
+            </p>
           </div>
 
           <div className="relative w-80 max-w-full">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink" />
             <Input
               className="rounded-full border-none bg-white pl-10 shadow-sm focus-visible:ring-blue"
-              placeholder="Search…"
+              placeholder="Search by employer, role, country…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -132,73 +151,91 @@ function RequirementsPage() {
       {/* Table card — CSS grid rows, guaranteed full width, no cutoff */}
       <div className="overflow-hidden rounded-[24px] border border-border bg-white shadow-[0_12px_40px_-28px_rgba(11,31,58,0.35)]">
         {/* header row */}
-        <div className={`grid ${GRID_COLS} gap-2 border-b border-border bg-blue-wash/50 px-6 py-4`}>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Employer</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Role</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Country</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Headcount</span>
-          <span className="text-xs font-semibold uppercase tracking-wide text-navy">Status</span>
-          <span className="text-right text-xs font-semibold uppercase tracking-wide text-navy">
+        <div
+          className={`grid ${GRID_COLS} items-center gap-3 border-b border-border bg-blue-wash/50 px-6 py-3.5`}
+        >
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy/60">
+            Employer
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy/60">Role</span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy/60">
+            Country
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy/60">
+            Headcount
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-navy/60">Status</span>
+          <span className="text-right text-xs font-semibold uppercase tracking-wide text-navy/60">
             Actions
           </span>
         </div>
 
         {/* rows */}
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-blue-wash text-blue">
+          <div className="flex flex-col items-center justify-center gap-2.5 px-6 py-16 text-center">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-blue-wash text-blue">
               <Inbox size={20} />
             </span>
             <p className="text-sm text-ink">No requirements found.</p>
+            <p className="text-xs text-ink/60">Try a different search term.</p>
           </div>
         ) : (
           filtered.map((req) => (
             <div
               key={req.id}
-              className={`grid ${GRID_COLS} cursor-pointer items-center gap-2 border-b border-border px-6 py-4 transition last:border-0 hover:bg-blue-wash/40`}
+              className={`grid ${GRID_COLS} cursor-pointer items-center gap-3 border-b border-border px-6 py-3.5 text-sm transition last:border-0 hover:bg-blue-wash/30`}
               onClick={() => navigate({ to: `/Admin/requirements/${req.id}` })}
             >
-              <span className="truncate font-medium text-navy">{req.company_name}</span>
-              <span className="truncate text-ink">{req.role}</span>
-              <span className="truncate text-ink">{req.country}</span>
-              <span className="truncate text-ink">{req.headcount}</span>
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-wash text-[11px] font-semibold text-blue">
+                  {initials(req.company_name)}
+                </span>
+                <span className="truncate font-medium text-navy">{req.company_name}</span>
+              </span>
+              <span className="truncate capitalize text-ink/80">{req.role}</span>
+              <span className="truncate text-ink/80">{req.country}</span>
+              <span className="truncate text-ink/80">{req.headcount}</span>
               <span>
                 <StatusPill status={req.status} />
               </span>
               <div
-                className="flex flex-wrap items-center justify-end gap-2"
+                className="flex items-center justify-end gap-1.5"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Button
-                  size="sm"
-                  className="rounded-full bg-navy px-3 text-xs hover:bg-blue"
+                  size="icon"
+                  title="Approve"
+                  className="h-8 w-8 rounded-full bg-navy hover:bg-blue"
                   onClick={() => approve(req.id)}
                 >
-                  Approve
+                  <Check size={14} />
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="secondary"
-                  className="rounded-full bg-blue-wash px-3 text-xs text-blue hover:bg-blue-soft"
+                  title="Request clarification"
+                  className="h-8 w-8 rounded-full bg-blue-wash text-blue hover:bg-blue-soft"
                   onClick={() => clarification(req.id)}
                 >
-                  Clarify
+                  <HelpCircle size={14} />
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="outline"
-                  className="rounded-full border-border px-3 text-xs hover:border-blue hover:text-blue"
+                  title="Convert to job order"
+                  className="h-8 w-8 rounded-full border-border hover:border-blue hover:text-blue"
                   onClick={() => convert(req.id)}
                 >
-                  Convert
+                  <ArrowRightLeft size={14} />
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="destructive"
-                  className="rounded-full px-3 text-xs"
+                  title="Reject"
+                  className="h-8 w-8 rounded-full"
                   onClick={() => reject(req.id)}
                 >
-                  Reject
+                  <X size={14} />
                 </Button>
               </div>
             </div>
