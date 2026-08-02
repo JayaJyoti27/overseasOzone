@@ -424,12 +424,7 @@ export async function approveForRecruitment(jobOrderId: string, adminId: string)
 async function publishJobOrderToCandidates(jobOrderId: string) {
   const { data: jobOrder, error } = await supabase
     .from("job_orders")
-    .select(
-      `
-      *,
-      employer:employers(company_name, email, phone)
-    `,
-    )
+    .select("*")
     .eq("id", jobOrderId)
     .single();
 
@@ -444,22 +439,26 @@ async function publishJobOrderToCandidates(jobOrderId: string) {
     .eq("job_order_id", jobOrderId)
     .maybeSingle();
 
+  // Mapped against the real `jobs` table schema (confirmed via
+  // information_schema.columns) - it does not have company/category/
+  // requirements/benefits/salary/contact_*/posted_at columns like an
+  // earlier version of this function assumed, which meant every publish
+  // was silently failing. Only fields with a real source on the job order
+  // are set; city/employer_type/license_required have no equivalent
+  // field on job_orders yet, so they're left alone (omitted, not
+  // nulled-out) rather than guessed.
   const payload = {
     employer_id: jobOrder.employer_id,
     job_order_id: jobOrder.id,
     title: jobOrder.title,
-    company: jobOrder.employer?.company_name ?? null,
-    category: jobOrder.category ?? null,
     country: jobOrder.country ?? null,
-    description: jobOrder.job_description ?? null,
-    requirements: jobOrder.requirements ?? null,
-    benefits: jobOrder.benefits ?? null,
-    salary: jobOrder.salary_min ?? jobOrder.salary_max ?? null,
+    sector: jobOrder.category ?? null,
+    salary_min: jobOrder.salary_min ?? null,
+    salary_max: jobOrder.salary_max ?? null,
     currency: jobOrder.currency ?? null,
-    contact_email: jobOrder.employer?.email ?? null,
-    contact_phone: jobOrder.employer?.phone ?? null,
+    experience_required: jobOrder.requirements ?? null,
+    description: jobOrder.job_description ?? null,
     status: "active",
-    posted_at: new Date().toISOString(),
   };
 
   const { error: publishError } = existing

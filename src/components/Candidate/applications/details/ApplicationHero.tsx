@@ -30,11 +30,13 @@ export default function ApplicationHero({ application }: Props) {
           {application.job.country}
         </div>
 
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5" />
+        {application.job.sector && (
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
 
-          {application.job.employment_type}
-        </div>
+            {application.job.sector}
+          </div>
+        )}
       </div>
     </Card>
   );

@@ -112,36 +112,36 @@ export interface CandidateJob {
 
   title: string;
 
-  company: string;
+  /** Joined from the employer via job_order_id - null if not resolvable. */
+  company: string | null;
 
-  country: string;
+  contact_email?: string | null;
+
+  contact_phone?: string | null;
+
+  country?: string;
 
   city?: string;
 
-  salary: number;
+  sector?: string;
 
-  currency: string;
+  employer_type?: string;
 
-  employment_type?: string;
+  salary_min?: number | null;
 
-  experience?: string;
+  salary_max?: number | null;
 
-  education?: string;
+  currency?: string;
+
+  experience_required?: string;
+
+  license_required?: string;
 
   description?: string;
-
-  requirements?: string[];
-
-  benefits?: string[];
-
-  posted_at?: string;
 
   saved: boolean;
 
   applied: boolean;
-  contact_email?: string;
-
-  contact_phone?: string;
 }
 
 /* ==========================================================

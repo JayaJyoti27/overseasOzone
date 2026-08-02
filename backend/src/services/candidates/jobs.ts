@@ -11,6 +11,58 @@ interface JobFilters {
 
 /*
 |--------------------------------------------------------------------------
+| Attach Employer Company Name
+|--------------------------------------------------------------------------
+| The `jobs` table has no company column - the employer is only reachable
+| by going jobs.job_order_id -> job_orders.employer_id -> employers.
+| company_name. Done as a manual two-step join (same pattern as the
+| applications/saved_jobs lookups below) rather than a nested PostgREST
+| embed, since job_order_id isn't a declared FK relationship PostgREST
+| can traverse automatically.
+|--------------------------------------------------------------------------
+*/
+
+async function attachCompanyNames<T extends { job_order_id?: string | null }>(
+  jobs: T[],
+): Promise<(T & { company: string | null; contact_email: string | null; contact_phone: string | null })[]> {
+  const jobOrderIds = [...new Set(jobs.map((j) => j.job_order_id).filter(Boolean))] as string[];
+
+  if (!jobOrderIds.length) {
+    return jobs.map((job) => ({ ...job, company: null, contact_email: null, contact_phone: null }));
+  }
+
+  const { data: jobOrders } = await supabase
+    .from("job_orders")
+    .select("id, employer_id")
+    .in("id", jobOrderIds);
+
+  const employerIdByJobOrderId = new Map(
+    (jobOrders ?? []).map((jo) => [jo.id, jo.employer_id]),
+  );
+
+  const employerIds = [...new Set([...employerIdByJobOrderId.values()].filter(Boolean))];
+
+  const { data: employers } = employerIds.length
+    ? await supabase.from("employers").select("id, company_name, email, phone").in("id", employerIds)
+    : { data: [] };
+
+  const employerById = new Map((employers ?? []).map((e) => [e.id, e]));
+
+  return jobs.map((job) => {
+    const employerId = job.job_order_id ? employerIdByJobOrderId.get(job.job_order_id) : undefined;
+    const employer = employerId ? employerById.get(employerId) : undefined;
+
+    return {
+      ...job,
+      company: employer?.company_name ?? null,
+      contact_email: employer?.email ?? null,
+      contact_phone: employer?.phone ?? null,
+    };
+  });
+}
+
+/*
+|--------------------------------------------------------------------------
 | Browse Jobs
 |--------------------------------------------------------------------------
 */
@@ -31,7 +83,7 @@ export async function getCandidateJobs(candidateId: string, filters: JobFilters)
   }
 
   if (filters.category) {
-    query = query.eq("category", filters.category);
+    query = query.eq("sector", filters.category);
   }
 
   if (filters.search) {
@@ -64,13 +116,14 @@ export async function getCandidateJobs(candidateId: string, filters: JobFilters)
     .eq("candidate_id", candidateId)
     .in("job_id", jobIds);
 
+  const withCompany = await attachCompanyNames(data ?? []);
+
   return {
-    jobs:
-      data?.map((job) => ({
-        ...job,
-        applied: applications?.some((a) => a.job_id === job.id) ?? false,
-        saved: savedJobs?.some((s) => s.job_id === job.id) ?? false,
-      })) ?? [],
+    jobs: withCompany.map((job) => ({
+      ...job,
+      applied: applications?.some((a) => a.job_id === job.id) ?? false,
+      saved: savedJobs?.some((s) => s.job_id === job.id) ?? false,
+    })),
     pagination: {
       page,
       limit,
@@ -93,6 +146,8 @@ export async function getCandidateJob(candidateId: string, jobId: string) {
     throw new NotFoundError("Job not found.");
   }
 
+  const [withCompany] = await attachCompanyNames([data]);
+
   const { data: application } = await supabase
     .from("applications")
     .select("id,status")
@@ -108,7 +163,7 @@ export async function getCandidateJob(candidateId: string, jobId: string) {
     .maybeSingle();
 
   return {
-    ...data,
+    ...withCompany,
     applied: !!application,
     application,
     saved: !!saved,
@@ -179,7 +234,7 @@ export async function getRecommendedJobs(candidateId: string, limit = 6) {
   const orConditions: string[] = [];
 
   if (candidate?.specialty) {
-    orConditions.push(`category.eq.${candidate.specialty}`);
+    orConditions.push(`sector.eq.${candidate.specialty}`);
   }
 
   for (const country of countryMatches) {
@@ -218,7 +273,9 @@ export async function getRecommendedJobs(candidateId: string, limit = 6) {
     .eq("candidate_id", candidateId)
     .in("job_id", jobIds);
 
-  return (data ?? [])
+  const withCompany = await attachCompanyNames(data ?? []);
+
+  return withCompany
     .filter((job) => !applications?.some((a) => a.job_id === job.id))
     .map((job) => ({
       ...job,

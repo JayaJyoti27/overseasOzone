@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { Button } from "@/components/ui/button";
 import { useApply, useRemoveSavedJob, useSaveJob } from "@/lib/candidate/hooks";
+import { formatJobSalary } from "@/lib/candidate/formatJobSalary";
 import type { CandidateJob } from "@/lib/candidate/types";
 
 interface Props {
@@ -34,6 +35,8 @@ export default function JobCard({ job }: Props) {
   const apply = useApply();
 
   const [saved, setSaved] = useState(job.saved);
+
+  const salary = formatJobSalary(job);
 
   async function toggleSave() {
     if (saved) {
@@ -62,22 +65,29 @@ export default function JobCard({ job }: Props) {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-5 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
+            {job.company && (
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
 
-              {job.company}
-            </div>
+                {job.company}
+              </div>
+            )}
 
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
+            {job.country && (
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
 
-              {job.country}
-            </div>
+                {job.country}
+                {job.city ? `, ${job.city}` : ""}
+              </div>
+            )}
 
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              {job.salary} {job.currency}
-            </div>
+            {salary && (
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                {salary}
+              </div>
+            )}
           </div>
         </div>
 
@@ -90,13 +100,11 @@ export default function JobCard({ job }: Props) {
         </Button>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Badge variant="secondary">Overseas</Badge>
-
-        <Badge variant="outline">Full Time</Badge>
-
-        <Badge variant="outline">Immediate Hiring</Badge>
-      </div>
+      {job.sector && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Badge variant="secondary">{job.sector}</Badge>
+        </div>
+      )}
 
       <div className="mt-8 flex flex-wrap gap-3">
         <Button disabled={job.applied} onClick={handleApply}>
