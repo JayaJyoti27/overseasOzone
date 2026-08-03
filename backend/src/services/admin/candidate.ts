@@ -102,7 +102,7 @@ export async function getCandidate(candidateId: string) {
         id,
         status,
         internal_status,
-        created_at,
+        applied_at,
 
         job:job_orders(
           id,
@@ -112,7 +112,7 @@ export async function getCandidate(candidateId: string) {
       `,
     )
     .eq("candidate_id", candidateId)
-    .order("created_at", {
+    .order("applied_at", {
       ascending: false,
     });
 
