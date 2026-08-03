@@ -153,6 +153,31 @@ export async function getCandidates() {
   const { data } = await api.get("/employer/candidates");
   return data.data;
 }
+export async function getCandidate(id: string) {
+  const { data } = await api.get(`/employer/candidates/${id}`);
+  return data.data;
+}
+
+export interface ScheduleInterviewPayload {
+  interview_date: string;
+  mode: "online" | "offline" | "phone";
+  meeting_link?: string;
+  location?: string;
+  interviewer_name?: string;
+  interviewer_email?: string;
+  interviewer_phone?: string;
+  notes?: string;
+}
+
+export async function scheduleCandidateInterview(id: string, payload: ScheduleInterviewPayload) {
+  const { data } = await api.post(`/employer/candidates/${id}/schedule-interview`, payload);
+  return data.data;
+}
+
+export async function rejectCandidate(id: string, reason: string) {
+  const { data } = await api.patch(`/employer/candidates/${id}/reject`, { reason });
+  return data.data;
+}
 export async function getDocuments() {
   const { data } = await api.get("/employer/documents");
   return data.data;

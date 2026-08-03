@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { getRequirement } from "@/lib/employer/api";
@@ -45,6 +45,7 @@ function Info({ label, value }: { label: string; value?: string | number | null 
 
 function JobOrderDetailsPage() {
   const { jobId } = Route.useParams();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [details, setDetails] = useState<any>(null);
@@ -287,7 +288,17 @@ function JobOrderDetailsPage() {
                 </TableHeader>
                 <TableBody>
                   {recentCandidates.map((application: any) => (
-                    <TableRow key={application.id}>
+                    <TableRow
+                      key={application.id}
+                      onClick={() =>
+                        application.candidate?.id &&
+                        navigate({
+                          to: "/Employer/candidates/$candidateId",
+                          params: { candidateId: application.candidate.id },
+                        })
+                      }
+                      className={application.candidate?.id ? "cursor-pointer hover:bg-muted/50" : undefined}
+                    >
                       <TableCell>{application.candidate?.full_name ?? "-"}</TableCell>
                       <TableCell>{application.candidate?.nationality ?? "-"}</TableCell>
                       <TableCell className="capitalize">

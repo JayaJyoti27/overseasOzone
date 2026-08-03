@@ -39,16 +39,19 @@ export async function getEmployerCandidate(employerId: string, candidateId: stri
     .from("applications")
     .select(
       `
-      id, status, internal_status, created_at,
+      id, status, internal_status, applied_at,
       job:job_orders!inner( id, title, country, employer_id )
     `,
     )
     .eq("candidate_id", candidateId)
     .eq("employer_id", employerId)
     .in("internal_status", EMPLOYER_VISIBLE_STATUSES)
-    .order("created_at", { ascending: false });
+    .order("applied_at", { ascending: false });
 
-  if (appError) throw new DatabaseError("Unable to fetch candidate applications.", appError);
+  if (appError) {
+    console.error(`[getEmployerCandidate] applications query failed for candidate ${candidateId}:`, appError);
+    throw new DatabaseError("Unable to fetch candidate applications.", appError);
+  }
   if (!applications || applications.length === 0) {
     // Covers: not this employer's candidate, candidate doesn't exist, and
     // "shortlisted yet" — none of these should be distinguishable to the
@@ -115,7 +118,7 @@ export async function getEmployerCandidates(employerId: string) {
         id,
         status,
         internal_status,
-        created_at,
+        applied_at,
         candidate:candidates(
           id,
           full_name:name,
@@ -132,7 +135,7 @@ export async function getEmployerCandidates(employerId: string) {
     )
     .eq("employer_id", employerId)
     .in("internal_status", EMPLOYER_VISIBLE_STATUSES)
-    .order("created_at", { ascending: false });
+    .order("applied_at", { ascending: false });
 
   if (error) throw new DatabaseError("Unable to fetch candidates.", error);
 
@@ -164,7 +167,7 @@ export async function getEmployerCandidates(employerId: string) {
       country: candidate.preferred_country ?? "—",
       position: job?.title ?? "—",
       status: app.status ?? "—",
-      applied_at: app.created_at,
+      applied_at: app.applied_at,
     });
   }
 
@@ -290,7 +293,7 @@ async function getEmployerVisibleApplication(employerId: string, candidateId: st
     .eq("candidate_id", candidateId)
     .eq("employer_id", employerId)
     .in("internal_status", EMPLOYER_VISIBLE_STATUSES)
-    .order("created_at", { ascending: false })
+    .order("applied_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
