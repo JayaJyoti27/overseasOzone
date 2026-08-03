@@ -30,7 +30,7 @@ export async function getInterviews(filters: InterviewFilters) {
       ),
       candidate:candidates(
         id,
-        full_name,
+        full_name:name,
         phone,
         email
       ),

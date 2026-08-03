@@ -26,7 +26,7 @@ export async function getMedicals(filters: MedicalFilters) {
       *,
       candidate:candidates(
         id,
-        full_name,
+        full_name:name,
         phone,
         email
       ),

@@ -26,7 +26,7 @@ export async function getDocuments(filters: DocumentFilters) {
       *,
       candidate:candidates(
         id,
-        full_name
+        full_name:name
       ),
       application:applications(
         id,
@@ -177,7 +177,7 @@ export async function getExpiringDocuments(days = 30) {
       `
       *,
       candidate:candidates(
-        full_name
+        full_name:name
       )
     `,
     )

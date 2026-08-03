@@ -25,7 +25,7 @@ export async function getVisas(filters: VisaFilters) {
       *,
       candidate:candidates(
         id,
-        full_name,
+        full_name:name,
         phone,
         email
       ),

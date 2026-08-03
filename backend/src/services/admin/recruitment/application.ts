@@ -29,7 +29,7 @@ export async function getApplications(filters: ApplicationFilters) {
       *,
       candidate:candidates(
         id,
-        full_name,
+        full_name:name,
         email,
         phone,
         nationality

@@ -41,7 +41,7 @@ export async function getEmployerDeployments(filters: EmployerDeploymentFilters)
 
         candidate:candidates(
           id,
-          full_name,
+          full_name:name,
           email,
           phone
         )
@@ -112,7 +112,7 @@ export async function getEmployerDeployment(employerId: string, deploymentId: st
 
           candidate:candidates(
             id,
-            full_name,
+            full_name:name,
             email,
             phone,
             nationality
@@ -163,7 +163,7 @@ export async function getEmployerDeployment(employerId: string, deploymentId: st
       performed_by,
       performer:users(
         id,
-        full_name
+        full_name:name
       )
     `,
     )

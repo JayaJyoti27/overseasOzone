@@ -79,7 +79,7 @@ export async function getEmployerRequirementDetails(employerId: string, requirem
 
           candidate:candidates(
             id,
-            full_name,
+            full_name:name,
             nationality
           )
         `,
@@ -123,7 +123,7 @@ export async function getEmployerRequirementDetails(employerId: string, requirem
 
           application:applications(
             candidate:candidates(
-              full_name
+              full_name:name
             )
           )
         `,
@@ -154,7 +154,7 @@ export async function getEmployerRequirementDetails(employerId: string, requirem
 
           application:applications(
             candidate:candidates(
-              full_name
+              full_name:name
             )
           )
         `,

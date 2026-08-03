@@ -93,7 +93,7 @@ export async function getEmployerJobOrder(employerId: string, jobOrderId: string
 
           candidate:candidates(
             id,
-            full_name,
+            full_name:name,
             email
           )
         )

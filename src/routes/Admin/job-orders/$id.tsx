@@ -249,14 +249,29 @@ function JobOrderDetails() {
           <div className="space-y-3">
             {job.candidates.map((candidate: any) => (
               <div
-                key={candidate.id}
+                key={candidate.applicationId ?? candidate.id}
                 className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue"
               >
                 <div>
-                  <h4 className="font-semibold text-navy">{candidate.name}</h4>
-                  <p className="text-sm text-ink">{candidate.email}</p>
+                  <h4 className="font-semibold text-navy">{candidate.name ?? "-"}</h4>
+                  <p className="text-sm text-ink">{candidate.phone ?? candidate.email ?? "-"}</p>
                 </div>
-                <StatusPill status={candidate.status} />
+
+                <div className="flex items-center gap-3">
+                  {candidate.resume_url ? (
+                    <a
+                      href={candidate.resume_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-blue hover:underline"
+                    >
+                      View CV
+                    </a>
+                  ) : (
+                    <span className="text-xs text-ink/60">No CV</span>
+                  )}
+                  <StatusPill status={candidate.status} />
+                </div>
               </div>
             ))}
           </div>

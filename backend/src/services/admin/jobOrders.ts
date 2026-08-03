@@ -145,7 +145,67 @@ export async function getJobOrder(jobOrderId: string) {
     }
   }
 
-  return data;
+  /*
+  |--------------------------------------------------------------------------
+  | Assigned Candidates
+  |--------------------------------------------------------------------------
+  | The frontend's "Assigned Candidates" panel expects a flat `candidates`
+  | array on the job order (id, name, email, phone, status, resume_url).
+  | Pulled as two queries rather than one nested embed: applications ->
+  | candidates works as a normal FK embed, but each candidate's resume is
+  | a row in `documents` (document_type = "resume"), not a column on
+  | `candidates`, so it needs its own lookup keyed by candidate id.
+  |--------------------------------------------------------------------------
+  */
+
+  const { data: applications } = await supabase
+    .from("applications")
+    .select(
+      `
+      id,
+      status,
+      internal_status,
+
+      candidate:candidates(
+        id,
+        full_name:name,
+        email,
+        phone
+      )
+      `,
+    )
+    .eq("job_order_id", jobOrderId)
+    .order("applied_at", { ascending: false });
+
+  const candidateIds = [
+    ...new Set((applications ?? []).map((a: any) => a.candidate?.id).filter(Boolean)),
+  ] as string[];
+
+  const { data: resumes } = candidateIds.length
+    ? await supabase
+        .from("documents")
+        .select("candidate_id, public_url")
+        .eq("document_type", "resume")
+        .in("candidate_id", candidateIds)
+    : { data: [] as { candidate_id: string; public_url: string }[] };
+
+  const resumeByCandidateId = new Map(
+    (resumes ?? []).map((r) => [r.candidate_id, r.public_url]),
+  );
+
+  const candidates = (applications ?? [])
+    .filter((a: any) => a.candidate)
+    .map((a: any) => ({
+      id: a.candidate.id,
+      applicationId: a.id,
+      name: a.candidate.full_name,
+      email: a.candidate.email,
+      phone: a.candidate.phone,
+      status: a.internal_status ?? a.status,
+      resume_url: resumeByCandidateId.get(a.candidate.id) ?? null,
+    }));
+
+  return { ...data, candidates };
 }
 /*
 |--------------------------------------------------------------------------

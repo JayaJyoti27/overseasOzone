@@ -70,7 +70,7 @@ export async function getEmployerCandidates(employerId: string) {
         created_at,
         candidate:candidates(
           id,
-          full_name,
+          full_name:name,
           email,
           phone,
           preferred_country

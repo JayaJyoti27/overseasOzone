@@ -25,7 +25,7 @@ export async function getDeployments(filters: DeploymentFilters) {
       *,
       candidate:candidates(
         id,
-        full_name,
+        full_name:name,
         phone,
         email
       ),
