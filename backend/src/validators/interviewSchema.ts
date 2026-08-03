@@ -53,3 +53,31 @@ export const CompleteInterviewSchema = z.object({
 export const CancelInterviewSchema = z.object({
   reason: z.string().min(5),
 });
+
+/*
+|--------------------------------------------------------------------------
+| Employer Candidate Actions
+|--------------------------------------------------------------------------
+*/
+
+export const EmployerScheduleInterviewSchema = z.object({
+  interview_date: z.coerce.date(),
+
+  mode: z.enum(INTERVIEW_MODE),
+
+  meeting_link: z.string().optional(),
+
+  location: z.string().optional(),
+
+  interviewer_name: z.string().min(2).optional(),
+
+  interviewer_email: z.string().email().optional(),
+
+  interviewer_phone: z.string().optional(),
+
+  notes: z.string().optional(),
+});
+
+export const EmployerRejectCandidateSchema = z.object({
+  reason: z.string().min(5),
+});

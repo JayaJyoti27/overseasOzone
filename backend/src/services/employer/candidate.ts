@@ -1,5 +1,38 @@
 import { supabase } from "../../config/supabase";
-import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { EMPLOYER_VISIBLE_STATUSES, APPLICATION_STATUS_FLOW } from "../../constants/applicationStatus";
+import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
+import { recordStatusChange } from "../admin/recruitment/statusHistory";
+
+/*
+|--------------------------------------------------------------------------
+| Field Mapping
+|--------------------------------------------------------------------------
+| The `candidates` table's real column names (name, current_country,
+| passport_expiry) don't match what the frontend expects (full_name,
+| current_location, passport_expiry_date). Translate at this boundary,
+| same convention as services/candidates/profile.ts.
+*/
+
+function toApiShape(row: any) {
+  if (!row) return row;
+  const { name, current_country, passport_expiry, ...rest } = row;
+  return {
+    ...rest,
+    full_name: name,
+    current_location: current_country,
+    passport_expiry_date: passport_expiry,
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| Candidate Detail
+|--------------------------------------------------------------------------
+| Only visible once the candidate has been shortlisted (or moved further
+| along the pipeline) on at least one application for this employer's job
+| orders. Applications still at applied/application_received/cv_under_review
+| are pre-review and stay hidden — see EMPLOYER_VISIBLE_STATUSES.
+*/
 
 export async function getEmployerCandidate(employerId: string, candidateId: string) {
   const { data: applications, error: appError } = await supabase
@@ -11,14 +44,16 @@ export async function getEmployerCandidate(employerId: string, candidateId: stri
     `,
     )
     .eq("candidate_id", candidateId)
-    .eq("job.employer_id", employerId)
+    .eq("employer_id", employerId)
+    .in("internal_status", EMPLOYER_VISIBLE_STATUSES)
     .order("created_at", { ascending: false });
-
-  // ...rest of function unchanged;
 
   if (appError) throw new DatabaseError("Unable to fetch candidate applications.", appError);
   if (!applications || applications.length === 0) {
-    throw new NotFoundError("Candidate not found."); // also covers "not this employer's candidate"
+    // Covers: not this employer's candidate, candidate doesn't exist, and
+    // "shortlisted yet" — none of these should be distinguishable to the
+    // employer, so a single 404 is intentional.
+    throw new NotFoundError("Candidate not found.");
   }
 
   const { data: candidate, error: candError } = await supabase
@@ -46,13 +81,26 @@ export async function getEmployerCandidate(employerId: string, candidateId: stri
     .eq("candidate_id", candidateId)
     .order("created_at", { ascending: false });
 
+  const { data: interview } = await supabase
+    .from("interviews")
+    .select("*")
+    .eq("application_id", applications[0].id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   return {
-    candidate,
+    candidate: toApiShape(candidate),
     applications,
+    // The most recent application drives the header status + action gating
+    // (reject / schedule) on the candidate detail page.
+    application: applications[0],
     documents: documents ?? [],
     resume: documents?.find((d) => d.document_type === "resume") ?? null,
+    interview: interview ?? null,
   };
 }
+
 /*
 |--------------------------------------------------------------------------
 | Candidate List (all candidates who applied to this employer's job orders)
@@ -82,7 +130,8 @@ export async function getEmployerCandidates(employerId: string) {
         )
       `,
     )
-    .eq("job.employer_id", employerId)
+    .eq("employer_id", employerId)
+    .in("internal_status", EMPLOYER_VISIBLE_STATUSES)
     .order("created_at", { ascending: false });
 
   if (error) throw new DatabaseError("Unable to fetch candidates.", error);
@@ -120,4 +169,133 @@ export async function getEmployerCandidates(employerId: string) {
   }
 
   return candidates;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Reject Candidate
+|--------------------------------------------------------------------------
+| Employer-initiated rejection, only allowed once the candidate is already
+| visible to them (shortlisted or later). Mirrors admin's
+| rejectApplication, but scoped to this employer's own application.
+*/
+
+export async function rejectEmployerCandidate(
+  employerId: string,
+  candidateId: string,
+  reason: string,
+) {
+  const application = await getEmployerVisibleApplication(employerId, candidateId);
+
+  const { data, error } = await supabase
+    .from("applications")
+    .update({
+      internal_status: "rejected",
+      admin_notes: reason,
+      closed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", application.id)
+    .select()
+    .single();
+
+  if (error) throw new DatabaseError("Unable to reject candidate.", error);
+
+  await recordStatusChange(application.id, "rejected", {
+    changedBy: employerId,
+    notes: reason,
+  });
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Schedule Interview
+|--------------------------------------------------------------------------
+| Employer-initiated scheduling, only valid from "employer_shortlisted"
+| (the same gate APPLICATION_STATUS_FLOW enforces for everyone else).
+*/
+
+interface ScheduleInterviewPayload {
+  interview_date: string;
+  mode: string;
+  meeting_link?: string;
+  location?: string;
+  interviewer_name?: string;
+  interviewer_email?: string;
+  interviewer_phone?: string;
+  notes?: string;
+}
+
+export async function scheduleEmployerInterview(
+  employerId: string,
+  candidateId: string,
+  payload: ScheduleInterviewPayload,
+) {
+  const application = await getEmployerVisibleApplication(employerId, candidateId);
+
+  const allowedNext = APPLICATION_STATUS_FLOW[application.internal_status as keyof typeof APPLICATION_STATUS_FLOW];
+  if (!allowedNext?.includes("interview_scheduled")) {
+    throw new ConflictError(
+      "This candidate isn't at the shortlisted stage yet, so an interview can't be scheduled.",
+    );
+  }
+
+  const { data: interview, error: interviewError } = await supabase
+    .from("interviews")
+    .insert({
+      application_id: application.id,
+      job_order_id: application.job_order_id,
+      scheduled_by: employerId,
+      interview_date: payload.interview_date,
+      mode: payload.mode,
+      meeting_link: payload.meeting_link,
+      location: payload.location,
+      interviewer_name: payload.interviewer_name,
+      interviewer_email: payload.interviewer_email,
+      interviewer_phone: payload.interviewer_phone,
+      notes: payload.notes,
+      status: "scheduled",
+    })
+    .select()
+    .single();
+
+  if (interviewError) throw new DatabaseError("Unable to schedule interview.", interviewError);
+
+  await supabase
+    .from("applications")
+    .update({
+      internal_status: "interview_scheduled",
+      last_status_change: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", application.id);
+
+  await recordStatusChange(application.id, "interview_scheduled", { changedBy: employerId });
+
+  return interview;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Shared helper — fetch the employer-visible application for a candidate
+|--------------------------------------------------------------------------
+*/
+
+async function getEmployerVisibleApplication(employerId: string, candidateId: string) {
+  const { data: application, error } = await supabase
+    .from("applications")
+    .select("id, internal_status, job_order_id")
+    .eq("candidate_id", candidateId)
+    .eq("employer_id", employerId)
+    .in("internal_status", EMPLOYER_VISIBLE_STATUSES)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new DatabaseError("Unable to fetch candidate application.", error);
+  if (!application) throw new NotFoundError("Candidate not found.");
+
+  return application;
 }

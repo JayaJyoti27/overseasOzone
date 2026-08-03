@@ -34,6 +34,7 @@ function ApplicationDetails() {
   const { id } = Route.useParams();
 
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [application, setApplication] = useState<any>(null);
 
@@ -49,6 +50,7 @@ function ApplicationDetails() {
 
   async function load() {
     setLoading(true);
+    setError(null);
 
     try {
       const [applicationData, timelineData] = await Promise.all([
@@ -64,6 +66,13 @@ function ApplicationDetails() {
           getNextStages(applicationData?.internal_status)[0] ??
           "",
       );
+    } catch (err: any) {
+      setApplication(null);
+      setError(
+        err?.response?.status === 401
+          ? "Your session has expired. Please log in again."
+          : "Couldn't load this application. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
@@ -73,6 +82,15 @@ function ApplicationDetails() {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !application) {
+    return (
+      <div className="flex h-[70vh] flex-col items-center justify-center gap-3">
+        <p className="text-muted-foreground">{error ?? "Application not found."}</p>
+        <Button onClick={load}>Retry</Button>
       </div>
     );
   }

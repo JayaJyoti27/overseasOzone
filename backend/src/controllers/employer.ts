@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import * as EmployerService from "../services/employer";
-import { getEmployerCandidate, getEmployerCandidates } from "../services/employer/candidate";
+import {
+  getEmployerCandidate,
+  getEmployerCandidates,
+  rejectEmployerCandidate,
+  scheduleEmployerInterview,
+} from "../services/employer/candidate";
 import * as StorageService from "../services/storage";
+import {
+  EmployerScheduleInterviewSchema,
+  EmployerRejectCandidateSchema,
+} from "../validators/interviewSchema";
 
 /*
 |--------------------------------------------------------------------------
@@ -422,6 +431,45 @@ export async function getCandidates(req: Request, res: Response) {
     return res.json({ success: true, data });
   } catch (err: any) {
     return res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+export async function rejectCandidate(req: Request, res: Response) {
+  try {
+    const parsed = EmployerRejectCandidateSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, errors: parsed.error.flatten() });
+    }
+
+    const data = await rejectEmployerCandidate(
+      req.employerId!,
+      String(req.params.id),
+      parsed.data.reason,
+    );
+
+    return res.json({ success: true, data });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
+  }
+}
+
+export async function scheduleCandidateInterview(req: Request, res: Response) {
+  try {
+    const parsed = EmployerScheduleInterviewSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, errors: parsed.error.flatten() });
+    }
+
+    const data = await scheduleEmployerInterview(req.employerId!, String(req.params.id), {
+      ...parsed.data,
+      interview_date: parsed.data.interview_date.toISOString(),
+    });
+
+    return res.status(201).json({ success: true, data });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
   }
 }
 

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   getJobOrder,
@@ -17,6 +17,11 @@ import {
   TIMELINE_STAGES,
   type JobOrderAction,
 } from "@/lib/admin/jobOrderStatus";
+import {
+  APPLICATION_STATUS_LABELS,
+  APPLICATION_STATUS_STYLES,
+  isApplicationStatus,
+} from "@/lib/admin/applicationStatus";
 import { JobOrderTimeline } from "@/components/Admin/JobOrders/JobOrderTimeline";
 import { LegalizationChecklist } from "@/components/Admin/JobOrders/LegalizationChecklist";
 
@@ -45,6 +50,23 @@ function StatusPill({ status }: { status?: string }) {
       )}`}
     >
       {statusLabel(status)}
+    </span>
+  );
+}
+
+function ApplicationStatusPill({ status }: { status?: string }) {
+  const label = isApplicationStatus(status)
+    ? APPLICATION_STATUS_LABELS[status]
+    : status || "Unknown";
+  const style = isApplicationStatus(status)
+    ? APPLICATION_STATUS_STYLES[status]
+    : "bg-muted text-muted-foreground";
+
+  return (
+    <span
+      className={`inline-block rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${style}`}
+    >
+      {label}
     </span>
   );
 }
@@ -236,7 +258,10 @@ function JobOrderDetails() {
 
       {showLegalizationChecklist && (
         <Panel title="Legalization Checklist">
-          <LegalizationChecklist jobOrderId={job.id} onCompletenessChange={setLegalizationComplete} />
+          <LegalizationChecklist
+            jobOrderId={job.id}
+            onCompletenessChange={setLegalizationComplete}
+          />
         </Panel>
       )}
 
@@ -248,9 +273,11 @@ function JobOrderDetails() {
         ) : (
           <div className="space-y-3">
             {job.candidates.map((candidate: any) => (
-              <div
+              <Link
                 key={candidate.applicationId ?? candidate.id}
-                className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue"
+                to="/Admin/applications/$id"
+                params={{ id: candidate.applicationId }}
+                className="flex items-center justify-between rounded-2xl border border-border p-4 transition hover:border-blue hover:shadow-sm"
               >
                 <div>
                   <h4 className="font-semibold text-navy">{candidate.name ?? "-"}</h4>
@@ -263,6 +290,7 @@ function JobOrderDetails() {
                       href={candidate.resume_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="text-sm font-medium text-blue hover:underline"
                     >
                       View CV
@@ -270,9 +298,9 @@ function JobOrderDetails() {
                   ) : (
                     <span className="text-xs text-ink/60">No CV</span>
                   )}
-                  <StatusPill status={candidate.status} />
+                  <ApplicationStatusPill status={candidate.status} />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

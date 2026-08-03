@@ -23,6 +23,8 @@ import {
   submitForReview,
   getCandidate,
   getCandidates,
+  rejectCandidate,
+  scheduleCandidateInterview,
   getJobOrderLegalizationDocuments,
   uploadJobOrderLegalizationDocument,
 } from "../controllers/employer";
@@ -104,6 +106,8 @@ router.post("/submit-for-review", submitForReview);
 
 router.get("/candidates", getCandidates);
 router.get("/candidates/:id", getCandidate);
+router.patch("/candidates/:id/reject", rejectCandidate);
+router.post("/candidates/:id/schedule-interview", scheduleCandidateInterview);
 
 /*
 |--------------------------------------------------------------------------

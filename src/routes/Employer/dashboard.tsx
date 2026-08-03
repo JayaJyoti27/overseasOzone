@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Briefcase, Users, CalendarDays, Plane, AlertCircle, Sparkles } from "lucide-react";
+import {
+  Briefcase,
+  Users,
+  UserCheck,
+  CalendarDays,
+  Plane,
+  AlertCircle,
+  Sparkles,
+} from "lucide-react";
 
 import { StatCard } from "@/components/Employer/Dashboard/StatCard";
 import { RecruitmentPipeline } from "@/components/Employer/Dashboard/RecruitmentPipeline";
@@ -18,6 +26,7 @@ export const Route = createFileRoute("/Employer/dashboard")({
 const STAT_CONFIG = {
   activeJobOrders: { title: "Active Job Orders", icon: Briefcase, color: "blue" },
   totalCandidates: { title: "Candidates", icon: Users, color: "green" },
+  candidatesShortlisted: { title: "Shortlisted", icon: UserCheck, color: "amber" },
   upcomingInterviews: { title: "Interviews", icon: CalendarDays, color: "amber" },
   deployments: { title: "Deployments", icon: Plane, color: "purple" },
 } as const;
@@ -72,8 +81,8 @@ function EmployerDashboard() {
           <div className="flex items-center gap-2">
             <Sparkles className="text-amber-600" size={18} />
             <p className="text-sm text-amber-800">
-              You're approved! Add your industry, HR contact, and branches to finish setting up
-              your company profile.
+              You're approved! Add your industry, HR contact, and branches to finish setting up your
+              company profile.
             </p>
           </div>
           <Button asChild size="sm">
@@ -95,7 +104,7 @@ function EmployerDashboard() {
       {!loading && !error && (
         <>
           {/* KPI Cards */}
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <StatCard
               title={STAT_CONFIG.activeJobOrders.title}
               value={dashboard?.dashboard?.activeJobOrders ?? 0}
@@ -108,6 +117,13 @@ function EmployerDashboard() {
               value={dashboard?.dashboard?.totalCandidates ?? 0}
               icon={STAT_CONFIG.totalCandidates.icon}
               color={STAT_CONFIG.totalCandidates.color}
+            />
+
+            <StatCard
+              title={STAT_CONFIG.candidatesShortlisted.title}
+              value={dashboard?.dashboard?.candidatesShortlisted ?? 0}
+              icon={STAT_CONFIG.candidatesShortlisted.icon}
+              color={STAT_CONFIG.candidatesShortlisted.color}
             />
 
             <StatCard

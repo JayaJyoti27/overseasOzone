@@ -41,6 +41,7 @@ export async function getEmployerDashboard(employerId: string) {
     legalization,
     recruitmentOpen,
     interviews,
+    shortlistedCandidates,
     selectedCandidates,
     deployedCandidates,
     candidateApplications,
@@ -79,6 +80,12 @@ export async function getEmployerDashboard(employerId: string) {
       .select("*, job_orders!inner(employer_id)", { head: true, count: "exact" })
       .eq("job_orders.employer_id", employerId)
       .gte("interview_date", new Date().toISOString()),
+
+    supabase
+      .from("applications")
+      .select("*", { head: true, count: "exact" })
+      .eq("employer_id", employerId)
+      .eq("internal_status", "employer_shortlisted"),
 
     supabase
       .from("applications")
@@ -164,6 +171,7 @@ export async function getEmployerDashboard(employerId: string) {
       legalizationInProgress: legalization.count ?? 0,
       jobsOpenForRecruitment: recruitmentOpen.count ?? 0,
       interviewsScheduled: interviews.count ?? 0,
+      candidatesShortlisted: shortlistedCandidates.count ?? 0,
       candidatesSelected: selectedCandidates.count ?? 0,
       candidatesDeployed: deployedCandidates.count ?? 0,
       totalCandidates,
