@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import type { AxiosError } from "axios";
 
 import * as api from "./api";
 import type { Candidate } from "./types";
+
+type ApiError = AxiosError<{ message?: string }>;
 
 /* ==========================================================
    Query Keys
@@ -88,11 +92,11 @@ export function useProfileCompletion() {
    Jobs
 ========================================================== */
 
-export function useJobs(filters?: { search?: string; country?: string; category?: string }) {
+export function useJobs() {
   return useQuery({
-    queryKey: [...candidateKeys.jobs, filters ?? {}],
+    queryKey: candidateKeys.jobs,
 
-    queryFn: () => api.getJobs(filters),
+    queryFn: api.getJobs,
   });
 }
 
@@ -243,6 +247,11 @@ export function useReplaceDocument() {
       qc.invalidateQueries({
         queryKey: candidateKeys.documents,
       });
+      toast.success("Document replaced.");
+    },
+
+    onError: (error: ApiError) => {
+      toast.error(error?.response?.data?.message ?? "Couldn't replace the document. Try again.");
     },
   });
 }
@@ -257,6 +266,11 @@ export function useDeleteDocument() {
       qc.invalidateQueries({
         queryKey: candidateKeys.documents,
       });
+      toast.success("Document deleted.");
+    },
+
+    onError: (error: ApiError) => {
+      toast.error(error?.response?.data?.message ?? "Couldn't delete the document. Try again.");
     },
   });
 }

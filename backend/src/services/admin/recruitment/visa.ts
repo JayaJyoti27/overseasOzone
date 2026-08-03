@@ -1,5 +1,6 @@
 import { supabase } from "../../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../../utils/AppError";
+import { recordStatusChange } from "./statusHistory";
 
 interface VisaFilters {
   page?: number;
@@ -210,6 +211,8 @@ export async function approveVisa(
     })
     .eq("id", data.application_id);
 
+  await recordStatusChange(data.application_id, "visa_approved", { changedBy: adminId });
+
   return data;
 }
 /*
@@ -218,7 +221,7 @@ export async function approveVisa(
 |--------------------------------------------------------------------------
 */
 
-export async function issueVisa(visaId: string) {
+export async function issueVisa(visaId: string, changedBy?: string) {
   const { data, error } = await supabase
     .from("visas")
     .update({
@@ -245,6 +248,8 @@ export async function issueVisa(visaId: string) {
     })
     .eq("id", data.application_id);
 
+  await recordStatusChange(data.application_id, "ticket_confirmed", { changedBy });
+
   return data;
 }
 /*
@@ -253,7 +258,7 @@ export async function issueVisa(visaId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function rejectVisa(visaId: string, remarks: string) {
+export async function rejectVisa(visaId: string, remarks: string, changedBy?: string) {
   const { data, error } = await supabase
     .from("visas")
     .update({
@@ -281,6 +286,8 @@ export async function rejectVisa(visaId: string, remarks: string) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", data.application_id);
+
+  await recordStatusChange(data.application_id, "rejected", { changedBy, notes: remarks });
 
   return data;
 }

@@ -1,5 +1,6 @@
 import { supabase } from "../../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../../utils/AppError";
+import { recordStatusChange } from "./statusHistory";
 
 interface InterviewFilters {
   page?: number;
@@ -181,6 +182,8 @@ export async function scheduleInterview(
     })
     .eq("id", applicationId);
 
+  await recordStatusChange(applicationId, "interview_scheduled", { changedBy: scheduledBy });
+
   return data;
 }
 
@@ -194,6 +197,7 @@ export async function completeInterview(
   interviewId: string,
   result: "selected" | "rejected",
   feedback?: string,
+  changedBy?: string,
 ) {
   const { data: interview, error } = await supabase
     .from("interviews")
@@ -216,16 +220,20 @@ export async function completeInterview(
     throw new DatabaseError("Unable to complete interview.", error);
   }
 
+  const newStatus = result === "selected" ? "selected" : "rejected";
+
   await supabase
     .from("applications")
     .update({
-      internal_status: result === "selected" ? "selected" : "rejected",
+      internal_status: newStatus,
 
       last_status_change: new Date().toISOString(),
 
       updated_at: new Date().toISOString(),
     })
     .eq("id", interview.application_id);
+
+  await recordStatusChange(interview.application_id, newStatus, { changedBy, notes: feedback });
 
   return interview;
 }

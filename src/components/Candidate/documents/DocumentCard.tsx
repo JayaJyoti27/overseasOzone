@@ -5,6 +5,17 @@ import { CalendarDays, Download, Eye, FileText, RefreshCw, Trash2 } from "lucide
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 import { useDeleteDocument, useReplaceDocument } from "@/lib/candidate/hooks";
 
@@ -94,10 +105,34 @@ export default function DocumentCard({ document }: Props) {
           Replace
         </Button>
 
-        <Button variant="destructive" onClick={() => remove.mutate(document.id)}>
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" disabled={remove.isPending}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              {remove.isPending ? "Deleting..." : "Delete"}
+            </Button>
+          </AlertDialogTrigger>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {document.file_name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the file permanently. If this document is required for your
+                application, you'll need to upload it again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => remove.mutate(document.id)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Card>
   );

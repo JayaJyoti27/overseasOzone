@@ -1,5 +1,6 @@
 import { supabase } from "../../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../../utils/AppError";
+import { recordStatusChange } from "./statusHistory";
 
 interface MedicalFilters {
   page?: number;
@@ -145,6 +146,8 @@ export async function scheduleMedical(
     })
     .eq("id", applicationId);
 
+  await recordStatusChange(applicationId, "medical", { changedBy: scheduledBy });
+
   return data;
 }
 /*
@@ -197,6 +200,8 @@ export async function markMedicalUnfit(medicalId: string, adminId: string, remar
     })
     .eq("id", data.application_id);
 
+  await recordStatusChange(data.application_id, "rejected", { changedBy: adminId, notes: remarks });
+
   return data;
 }
 /*
@@ -244,6 +249,8 @@ export async function markMedicalFit(
       updated_at: new Date().toISOString(),
     })
     .eq("id", data.application_id);
+
+  await recordStatusChange(data.application_id, "visa_processing", { changedBy: adminId });
 
   return data;
 }

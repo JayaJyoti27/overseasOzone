@@ -109,6 +109,31 @@ export async function replaceCandidateDocument(
 */
 
 export async function deleteCandidateDocument(candidateId: string, documentId: string) {
+  // Confirm the document belongs to this candidate before touching anything.
+  const { data: existing, error: findError } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("candidate_id", candidateId)
+    .eq("id", documentId)
+    .single();
+
+  if (findError || !existing) {
+    throw new NotFoundError("Document not found.");
+  }
+
+  // Every upload/verify/reject action writes a document_history row, so a
+  // document almost always has at least one history row referencing it via
+  // a foreign key. Deleting the document without clearing those first fails
+  // with a FK violation on essentially every document, every time.
+  const { error: historyError } = await supabase
+    .from("document_history")
+    .delete()
+    .eq("document_id", documentId);
+
+  if (historyError) {
+    throw new DatabaseError("Unable to clear document history.", historyError);
+  }
+
   const { error } = await supabase
     .from("documents")
     .delete()
@@ -116,6 +141,16 @@ export async function deleteCandidateDocument(candidateId: string, documentId: s
     .eq("id", documentId);
 
   if (error) {
+    // Still referenced elsewhere (e.g. a medical report or visa ticket
+    // points at this exact file) — give a real reason instead of a raw
+    // Postgres error.
+    if (error.code === "23503") {
+      throw new DatabaseError(
+        "This document is linked to a medical, visa, or deployment record and can't be deleted while it's in use.",
+        error,
+      );
+    }
+
     throw new DatabaseError("Unable to delete document.", error);
   }
 

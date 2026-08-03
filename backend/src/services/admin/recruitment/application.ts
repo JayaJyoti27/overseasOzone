@@ -1,5 +1,7 @@
 import { supabase } from "../../../config/supabase";
-import { DatabaseError, NotFoundError } from "../../../utils/AppError";
+import { DatabaseError, NotFoundError, ValidationError } from "../../../utils/AppError";
+import { recordStatusChange } from "./statusHistory";
+import { APPLICATION_STATUSES, ApplicationStatus } from "../../../constants/applicationStatus";
 
 interface ApplicationFilters {
   page?: number;
@@ -130,7 +132,18 @@ export async function getApplication(applicationId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function updateApplicationStage(applicationId: string, stage: string, notes?: string) {
+export async function updateApplicationStage(
+  applicationId: string,
+  stage: string,
+  notes?: string,
+  changedBy?: string,
+) {
+  if (!APPLICATION_STATUSES.includes(stage as ApplicationStatus)) {
+    throw new ValidationError(
+      `"${stage}" is not a valid application status. Must be one of: ${APPLICATION_STATUSES.join(", ")}.`,
+    );
+  }
+
   const { data, error } = await supabase
     .from("applications")
     .update({
@@ -149,6 +162,12 @@ export async function updateApplicationStage(applicationId: string, stage: strin
   if (error) {
     throw new DatabaseError("Unable to update application.", error);
   }
+
+  if (!data) {
+    throw new NotFoundError("Application not found.");
+  }
+
+  await recordStatusChange(applicationId, stage, { changedBy, notes });
 
   return data;
 }
@@ -183,7 +202,7 @@ export async function assignRecruiter(applicationId: string, recruiterId: string
 |--------------------------------------------------------------------------
 */
 
-export async function rejectApplication(applicationId: string, reason: string) {
+export async function rejectApplication(applicationId: string, reason: string, changedBy?: string) {
   const { data, error } = await supabase
     .from("applications")
     .update({
@@ -203,6 +222,8 @@ export async function rejectApplication(applicationId: string, reason: string) {
     throw new DatabaseError("Unable to reject application.", error);
   }
 
+  await recordStatusChange(applicationId, "rejected", { changedBy, notes: reason });
+
   return data;
 }
 
@@ -212,7 +233,7 @@ export async function rejectApplication(applicationId: string, reason: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function withdrawApplication(applicationId: string) {
+export async function withdrawApplication(applicationId: string, changedBy?: string) {
   const { data, error } = await supabase
     .from("applications")
     .update({
@@ -229,6 +250,8 @@ export async function withdrawApplication(applicationId: string) {
   if (error) {
     throw new DatabaseError("Unable to withdraw application.", error);
   }
+
+  await recordStatusChange(applicationId, "withdrawn", { changedBy });
 
   return data;
 }

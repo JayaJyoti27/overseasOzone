@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import * as RecruitmentService from "../services/admin/recruitment";
 
+const ADMIN_ID = "admin-demo";
+
 /*
 |--------------------------------------------------------------------------
 | Applications
@@ -53,6 +55,7 @@ export async function updateApplicationStage(req: Request, res: Response) {
       String(req.params.id),
       req.body.stage,
       req.body.notes,
+      req.adminId,
     );
 
     res.json({
@@ -88,7 +91,11 @@ export async function assignRecruiter(req: Request, res: Response) {
 
 export async function rejectApplication(req: Request, res: Response) {
   try {
-    const data = await RecruitmentService.rejectApplication(String(req.params.id), req.body.reason);
+    const data = await RecruitmentService.rejectApplication(
+      String(req.params.id),
+      req.body.reason,
+      req.adminId,
+    );
 
     res.json({
       success: true,
@@ -104,7 +111,7 @@ export async function rejectApplication(req: Request, res: Response) {
 
 export async function withdrawApplication(req: Request, res: Response) {
   try {
-    const data = await RecruitmentService.withdrawApplication(String(req.params.id));
+    const data = await RecruitmentService.withdrawApplication(String(req.params.id), req.adminId);
 
     res.json({
       success: true,
@@ -143,7 +150,7 @@ export async function scheduleInterview(req: Request, res: Response) {
   try {
     const data = await RecruitmentService.scheduleInterview(
       String(req.params.applicationId),
-      req.adminId!,
+      ADMIN_ID,
       req.body,
     );
 
@@ -165,6 +172,7 @@ export async function completeInterview(req: Request, res: Response) {
       String(req.params.id),
       req.body.result,
       req.body.feedback,
+      req.adminId,
     );
 
     res.json({
@@ -206,7 +214,7 @@ export async function getDocuments(req: Request, res: Response) {
 }
 
 export async function verifyDocument(req: Request, res: Response) {
-  const data = await RecruitmentService.verifyDocument(String(req.params.id), req.adminId!);
+  const data = await RecruitmentService.verifyDocument(String(req.params.id), ADMIN_ID);
 
   res.json({
     success: true,
@@ -217,7 +225,7 @@ export async function verifyDocument(req: Request, res: Response) {
 export async function rejectDocument(req: Request, res: Response) {
   const data = await RecruitmentService.rejectDocument(
     String(req.params.id),
-    req.adminId!,
+    ADMIN_ID,
     req.body.reason,
   );
 
@@ -244,7 +252,7 @@ export async function getMedicals(req: Request, res: Response) {
 export async function scheduleMedical(req: Request, res: Response) {
   const data = await RecruitmentService.scheduleMedical(
     String(req.params.applicationId),
-    req.adminId!,
+    ADMIN_ID,
     req.body,
   );
 
@@ -257,7 +265,7 @@ export async function scheduleMedical(req: Request, res: Response) {
 export async function markMedicalFit(req: Request, res: Response) {
   const data = await RecruitmentService.markMedicalFit(
     String(req.params.id),
-    req.adminId!,
+    ADMIN_ID,
     req.body.reportDocumentId,
     req.body.expiryDate,
   );
@@ -271,7 +279,7 @@ export async function markMedicalFit(req: Request, res: Response) {
 export async function markMedicalUnfit(req: Request, res: Response) {
   const data = await RecruitmentService.markMedicalUnfit(
     String(req.params.id),
-    req.adminId!,
+    ADMIN_ID,
     req.body.remarks,
   );
 
@@ -298,7 +306,7 @@ export async function getVisas(req: Request, res: Response) {
 export async function createVisa(req: Request, res: Response) {
   const data = await RecruitmentService.createVisa(
     String(req.params.applicationId),
-    req.adminId!,
+    ADMIN_ID,
     req.body,
   );
 
@@ -311,7 +319,7 @@ export async function createVisa(req: Request, res: Response) {
 export async function approveVisa(req: Request, res: Response) {
   const data = await RecruitmentService.approveVisa(
     String(req.params.id),
-    req.adminId!,
+    ADMIN_ID,
     req.body.visaNumber,
     req.body.issueDate,
     req.body.expiryDate,
@@ -324,7 +332,7 @@ export async function approveVisa(req: Request, res: Response) {
 }
 
 export async function issueVisa(req: Request, res: Response) {
-  const data = await RecruitmentService.issueVisa(String(req.params.id));
+  const data = await RecruitmentService.issueVisa(String(req.params.id), req.adminId);
 
   res.json({
     success: true,
@@ -349,7 +357,7 @@ export async function getDeployments(req: Request, res: Response) {
 export async function createDeployment(req: Request, res: Response) {
   const data = await RecruitmentService.createDeployment(
     String(req.params.applicationId),
-    req.adminId!,
+    ADMIN_ID,
     req.body,
   );
 
@@ -396,7 +404,11 @@ export async function markArrived(req: Request, res: Response) {
 }
 
 export async function completeDeployment(req: Request, res: Response) {
-  const data = await RecruitmentService.completeDeployment(String(req.params.id), req.body.remarks);
+  const data = await RecruitmentService.completeDeployment(
+    String(req.params.id),
+    req.body.remarks,
+    req.adminId,
+  );
 
   res.json({
     success: true,
@@ -420,7 +432,7 @@ export async function getTimeline(req: Request, res: Response) {
 export async function markMedicalRetest(req: Request, res: Response) {
   const data = await RecruitmentService.markMedicalRetest(
     String(req.params.id),
-    req.adminId!,
+    ADMIN_ID,
     req.body.remarks,
   );
 
@@ -448,7 +460,7 @@ export async function submitVisa(req: Request, res: Response) {
 }
 
 export async function rejectVisa(req: Request, res: Response) {
-  const data = await RecruitmentService.rejectVisa(String(req.params.id), req.body.remarks);
+  const data = await RecruitmentService.rejectVisa(String(req.params.id), req.body.remarks, req.adminId);
 
   res.json({
     success: true,

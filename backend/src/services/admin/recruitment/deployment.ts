@@ -1,5 +1,6 @@
 import { supabase } from "../../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../../utils/AppError";
+import { recordStatusChange } from "./statusHistory";
 
 interface DeploymentFilters {
   page?: number;
@@ -208,7 +209,7 @@ export async function markDeparted(deploymentId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function completeDeployment(deploymentId: string, remarks?: string) {
+export async function completeDeployment(deploymentId: string, remarks?: string, changedBy?: string) {
   const { data, error } = await supabase
     .from("deployments")
     .update({
@@ -236,6 +237,8 @@ export async function completeDeployment(deploymentId: string, remarks?: string)
       updated_at: new Date().toISOString(),
     })
     .eq("id", data.application_id);
+
+  await recordStatusChange(data.application_id, "deployed", { changedBy, notes: remarks });
 
   return data;
 }

@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -78,13 +79,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Ozone Overseas — MEA-Licensed International Recruitment, India ↔ GCC" },
-      { name: "description", content: "India's MEA-licensed bridge connecting top talent with verified employers across the GCC — fast, screened and trusted." },
-      { property: "og:title", content: "Ozone Overseas — MEA-Licensed International Recruitment, India ↔ GCC" },
-      { name: "twitter:title", content: "Ozone Overseas — MEA-Licensed International Recruitment, India ↔ GCC" },
-      { property: "og:description", content: "India's MEA-licensed bridge connecting top talent with verified employers across the GCC — fast, screened and trusted." },
-      { name: "twitter:description", content: "India's MEA-licensed bridge connecting top talent with verified employers across the GCC — fast, screened and trusted." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d7b09172-6468-4609-8d63-d630cfecef38/id-preview-7bd5d6db--eac962f8-faab-46df-ad7d-e8d2964a4ffa.lovable.app-1782799968889.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d7b09172-6468-4609-8d63-d630cfecef38/id-preview-7bd5d6db--eac962f8-faab-46df-ad7d-e8d2964a4ffa.lovable.app-1782799968889.png" },
+      {
+        name: "description",
+        content:
+          "India's MEA-licensed bridge connecting top talent with verified employers across the GCC — fast, screened and trusted.",
+      },
+      {
+        property: "og:title",
+        content: "Ozone Overseas — MEA-Licensed International Recruitment, India ↔ GCC",
+      },
+      {
+        name: "twitter:title",
+        content: "Ozone Overseas — MEA-Licensed International Recruitment, India ↔ GCC",
+      },
+      {
+        property: "og:description",
+        content:
+          "India's MEA-licensed bridge connecting top talent with verified employers across the GCC — fast, screened and trusted.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "India's MEA-licensed bridge connecting top talent with verified employers across the GCC — fast, screened and trusted.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d7b09172-6468-4609-8d63-d630cfecef38/id-preview-7bd5d6db--eac962f8-faab-46df-ad7d-e8d2964a4ffa.lovable.app-1782799968889.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d7b09172-6468-4609-8d63-d630cfecef38/id-preview-7bd5d6db--eac962f8-faab-46df-ad7d-e8d2964a4ffa.lovable.app-1782799968889.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
@@ -92,7 +119,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -122,6 +152,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster richColors closeButton position="top-right" />
     </QueryClientProvider>
   );
 }

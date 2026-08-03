@@ -52,3 +52,26 @@ export const APPLICATION_STATUS_FLOW: Record<ApplicationStatus, ApplicationStatu
 
   withdrawn: [],
 };
+
+/*
+|--------------------------------------------------------------------------
+| Candidate Visibility
+|--------------------------------------------------------------------------
+| Mirrors the split documented in
+| supabase/migrations/20260803_001_application_status_history.sql.
+|
+| `applications.internal_status` can be set to any of the 16 values above.
+| `applications.status` (what a candidate sees) should only ever be set to
+| one of the 14 CANDIDATE_VISIBLE_STATUSES below — the other 2 are internal
+| recruiter/admin bookkeeping stages a candidate should never see.
+*/
+
+export const INTERNAL_ONLY_STATUSES: ApplicationStatus[] = ["application_received", "cv_under_review"];
+
+export const CANDIDATE_VISIBLE_STATUSES: ApplicationStatus[] = APPLICATION_STATUSES.filter(
+  (status) => !(INTERNAL_ONLY_STATUSES as string[]).includes(status),
+);
+
+export function isCandidateVisibleStatus(status: string): status is ApplicationStatus {
+  return (CANDIDATE_VISIBLE_STATUSES as string[]).includes(status);
+}
