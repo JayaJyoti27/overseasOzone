@@ -11,7 +11,7 @@ export default function JobSummary({ application }: Props) {
     <Card className="rounded-2xl p-6">
       <h2 className="mb-5 text-xl font-semibold">Job Summary</h2>
 
-      <p>{application.job.description}</p>
+      <p>{application.job?.description ?? "No description available."}</p>
     </Card>
   );
 }

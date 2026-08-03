@@ -111,9 +111,11 @@ export default function RecentApplications() {
             >
               <div className="group flex items-center justify-between rounded-xl border p-5 transition hover:border-primary hover:bg-muted/40">
                 <div>
-                  <h3 className="font-semibold">{application.job.title}</h3>
+                  <h3 className="font-semibold">{application.job?.title ?? "Job listing"}</h3>
 
-                  <p className="mt-1 text-sm text-muted-foreground">{application.job.company}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {application.job?.company ?? "—"}
+                  </p>
 
                   <div className="mt-3 flex items-center gap-4">
                     <Badge variant={statusVariant(application.status)}>

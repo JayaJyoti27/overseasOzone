@@ -79,19 +79,19 @@ export default function ApplicationCard({ application }: Props) {
     <Card className="rounded-2xl p-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-bold">{application.job.title}</h2>
+          <h2 className="text-xl font-bold">{application.job?.title ?? "Job listing"}</h2>
 
           <div className="mt-3 flex flex-wrap gap-5 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Briefcase className="h-4 w-4" />
 
-              {application.job.company}
+              {application.job?.company ?? "—"}
             </div>
 
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
 
-              {application.job.country}
+              {application.job?.country ?? "—"}
             </div>
 
             <div className="flex items-center gap-2">

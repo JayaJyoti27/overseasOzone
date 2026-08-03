@@ -23,7 +23,7 @@ export async function getCandidateApplications(candidateId: string, filters: App
     .select(
       `
       *,
-      jobs(*)
+      job:jobs(*)
       `,
       {
         count: "exact",
@@ -70,8 +70,8 @@ export async function getCandidateApplication(candidateId: string, applicationId
     .select(
       `
       *,
-      jobs(*),
-      employers(*)
+      job:jobs(*),
+      employer:employers(*)
       `,
     )
     .eq("candidate_id", candidateId)
