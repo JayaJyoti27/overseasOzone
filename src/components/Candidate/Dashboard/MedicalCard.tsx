@@ -144,7 +144,7 @@ export default function MedicalCard() {
         )}
 
         <Button className="mt-2 w-full" asChild>
-          <Link to="/Candidate/medical">View Medical</Link>
+          <Link to="/Candidates/medical">View Medical</Link>
         </Button>
       </CardContent>
     </Card>

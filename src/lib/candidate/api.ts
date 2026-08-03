@@ -22,6 +22,22 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// If the session has actually expired, every page that calls the API would
+// otherwise fail independently with its own half-handled error state. Catch
+// it once, here, and send the person back to log in instead.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && typeof window !== "undefined") {
+      const onAuthPage = window.location.pathname.startsWith("/candidate");
+      if (!onAuthPage) {
+        window.location.href = "/candidate";
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
 /* =========================================================
    SIGNUP / AUTH
 ========================================================= */
@@ -43,7 +59,7 @@ export const completeCandidateSignup = async (): Promise<CompleteCandidateSignup
 ========================================================= */
 export const getDashboard = async () => {
   const response = await api.get("/candidate/dashboard");
-  return response.data.data;
+  return response.data.data ?? null;
 };
 export const getProfile = async () => {
   const { data } = await api.get("/candidate/profile");
@@ -61,7 +77,7 @@ export const updateProfile = async (payload: any) => {
 
 export const getJob = async (jobId: string) => {
   const { data } = await api.get(`/candidate/jobs/${jobId}`);
-  return data.data;
+  return data.data ?? null;
 };
 
 export const saveJob = async (jobId: string) => {
@@ -90,7 +106,7 @@ export const apply = async (jobId: string) => {
 
 export const getApplication = async (applicationId: string) => {
   const { data } = await api.get(`/candidate/applications/${applicationId}`);
-  return data.data;
+  return data.data ?? null;
 };
 
 export const withdrawApplication = async (applicationId: string) => {
@@ -99,7 +115,7 @@ export const withdrawApplication = async (applicationId: string) => {
 };
 export const getApplications = async () => {
   const response = await api.get("/candidate/applications");
-  return response.data.applications;
+  return response.data.applications ?? [];
 };
 
 /* =========================================================
@@ -109,9 +125,7 @@ export const getApplications = async () => {
 export const getDocuments = async (): Promise<CandidateDocument[]> => {
   const response = await api.get("/candidate/documents");
 
-  console.log(response.data);
-
-  return response.data.data;
+  return response.data.data ?? [];
 };
 export const uploadDocument = async (formData: FormData) => {
   const { data } = await api.post("/candidate/documents", formData, {
@@ -139,7 +153,7 @@ export const deleteDocument = async (documentId: string) => {
 
 export const getOffers = async () => {
   const response = await api.get("/candidate/offers");
-  return response.data.data;
+  return response.data.data ?? [];
 };
 export const getOffer = async (offerId: string) => {
   const { data } = await api.get(`/candidate/offers/${offerId}`);
@@ -216,7 +230,7 @@ import type { CandidateDashboard } from "./types";
 
 export const getInterviews = async () => {
   const response = await api.get("/candidate/interviews");
-  return response.data.data;
+  return response.data.data ?? [];
 };
 export const getTimeline = async (applicationId: string) => {
   const { data } = await api.get(`/candidate/applications/${applicationId}/timeline`);
@@ -231,13 +245,13 @@ export const replaceDocument = async (id: string, formData: FormData) => {
 
   return data;
 };
-export const getJobs = async (params?: any): Promise<CandidateJob[]> => {
+export const getJobs = async (params?: any) => {
   const { data } = await api.get("/candidate/jobs", { params });
-  return data.jobs; // was returning the whole response body — fixed
+  return data.jobs ?? []; // was returning the whole response body — fixed
 };
 
 export const getRecommendedJobs = async (): Promise<CandidateJob[]> => {
   const { data } = await api.get("/candidate/jobs/recommended");
-  return data.jobs;
+  return data.jobs ?? [];
 };
 export default api;

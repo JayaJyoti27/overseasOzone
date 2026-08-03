@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 
 import { ArrowRight, Briefcase, CalendarDays, Globe, Trash2 } from "lucide-react";
 
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 
 import { useWithdrawApplication } from "@/lib/candidate/hooks";
+import { formatDate } from "@/lib/candidate/format";
 
 import type { CandidateApplication } from "@/lib/candidate/types";
 
@@ -72,21 +73,10 @@ function progress(status: string) {
 }
 
 export default function ApplicationCard({ application }: Props) {
-  const navigate = useNavigate();
   const withdraw = useWithdrawApplication();
 
-  function openDetails() {
-    navigate({ to: "/Candidates/applications/$id", params: { id: application.id } });
-  }
-
   return (
-    <Card
-      onClick={openDetails}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === "Enter" && openDetails()}
-      className="cursor-pointer rounded-2xl p-6 transition hover:-translate-y-0.5 hover:shadow-lg"
-    >
+    <Card className="rounded-2xl p-6">
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-bold">{application.job.title}</h2>
@@ -107,7 +97,7 @@ export default function ApplicationCard({ application }: Props) {
             <div className="flex items-center gap-2">
               <CalendarDays className="h-4 w-4" />
 
-              {new Date(application.created_at).toLocaleDateString()}
+              {formatDate(application.applied_at ?? application.created_at)}
             </div>
           </div>
         </div>
@@ -128,7 +118,7 @@ export default function ApplicationCard({ application }: Props) {
       </div>
 
       <div className="mt-8 flex flex-wrap gap-3">
-        <Button asChild onClick={(e) => e.stopPropagation()}>
+        <Button asChild>
           <Link
             to="/Candidates/applications/$id"
             params={{
@@ -141,13 +131,7 @@ export default function ApplicationCard({ application }: Props) {
         </Button>
 
         {application.status !== "withdrawn" && application.status !== "rejected" && (
-          <Button
-            variant="destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              withdraw.mutate(application.id);
-            }}
-          >
+          <Button variant="destructive" onClick={() => withdraw.mutate(application.id)}>
             <Trash2 className="mr-2 h-4 w-4" />
             Withdraw
           </Button>

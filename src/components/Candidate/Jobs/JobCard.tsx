@@ -59,6 +59,11 @@ export default function JobCard({ job }: Props) {
   async function handleApply(e: React.MouseEvent) {
     e.stopPropagation();
 
+    if (!job.id) {
+      console.error("JobCard: refusing to apply — job.id is missing.", job);
+      return;
+    }
+
     await apply.mutateAsync(job.id);
   }
 

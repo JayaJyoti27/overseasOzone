@@ -65,8 +65,20 @@ export interface LanguageEntry {
    Dashboard
 ========================================================== */
 
+export interface ProfileSections {
+  personalInfo: boolean;
+  passportDetails: boolean;
+  education: boolean;
+  workExperience: boolean;
+  resumeUploaded: boolean;
+}
+
 export interface CandidateDashboard {
   profileCompletion: number;
+
+  profileSections: ProfileSections;
+
+  isNewProfile: boolean;
 
   activeApplications: number;
 
@@ -107,68 +119,41 @@ export interface Activity {
    Job
 ========================================================== */
 
-/**
- * The employer-submitted fields that only exist on the source job_orders
- * row, not on the slim `jobs` board-listing table. Only populated on the
- * single-job/single-application detail fetch, not the list views.
- */
-export interface JobOrderDetails {
-  vacancies?: number | null;
-
-  contract_duration?: string | null;
-
-  working_hours?: string | null;
-
-  accommodation?: boolean;
-
-  transport?: boolean;
-
-  food?: boolean;
-
-  benefits?: string | null;
-
-  requirements?: string | null;
-
-  remarks?: string | null;
-}
-
 export interface CandidateJob {
   id: string;
 
   title: string;
 
-  /** Joined from the employer via job_order_id - null if not resolvable. */
-  company: string | null;
+  company: string;
 
-  contact_email?: string | null;
-
-  contact_phone?: string | null;
-
-  job_order?: JobOrderDetails | null;
-
-  country?: string;
+  country: string;
 
   city?: string;
 
-  sector?: string;
+  salary: number;
 
-  employer_type?: string;
+  currency: string;
 
-  salary_min?: number | null;
+  employment_type?: string;
 
-  salary_max?: number | null;
+  experience?: string;
 
-  currency?: string;
-
-  experience_required?: string;
-
-  license_required?: string;
+  education?: string;
 
   description?: string;
+
+  requirements?: string[];
+
+  benefits?: string[];
+
+  posted_at?: string;
 
   saved: boolean;
 
   applied: boolean;
+  contact_email?: string;
+
+  contact_phone?: string;
 }
 
 /* ==========================================================
@@ -178,7 +163,9 @@ export interface CandidateJob {
 export interface CandidateApplication {
   id: string;
 
-  created_at: string;
+  applied_at: string;
+
+  created_at?: string;
 
   updated_at?: string;
 

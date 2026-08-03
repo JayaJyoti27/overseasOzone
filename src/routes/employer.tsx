@@ -1,16 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, FormEvent, useEffect, useRef } from "react";
-import {
-  ShieldCheck,
-  ArrowRight,
-  Mail,
-  ArrowLeft,
-  MailCheck,
-  Loader2,
-  Building2,
-  User,
-  Phone,
-} from "lucide-react";
+import { ShieldCheck, ArrowRight, Mail, ArrowLeft, MailCheck, Loader2 } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/footer";
 import { sendEmployerLoginLink, getCurrentProfile, supabase } from "@/lib/supabase";
@@ -40,15 +30,12 @@ const DotGrid = ({ className = "" }: { className?: string }) => (
   <div className={`dot-grid ${className}`} aria-hidden />
 );
 
-type Step = "email" | "sent" | "details" | "finishing";
+type Step = "email" | "sent" | "finishing";
 
 function EmployerAuthPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [phone, setPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -80,9 +67,13 @@ function EmployerAuthPage() {
         return;
       }
 
-      // No profile yet — first time this person has signed in. Collect
-      // company details before we create the employer record.
-      setStep("details");
+      // No profile yet — first time this person has signed in. Create the
+      // bare profile + employer record now (no company details collected
+      // here anymore); the /Employer layout guard will see company_name is
+      // still empty and route them to /Employer/register to finish up.
+      await completeEmployerSignup();
+      finishing.current = true;
+      navigate({ to: "/Employer/dashboard" });
     } catch (err) {
       setStep("email");
       setError(err instanceof Error ? err.message : "Something went wrong signing you in.");
@@ -142,24 +133,6 @@ function EmployerAuthPage() {
     }
   }
 
-  async function handleCompleteSignup(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      await completeEmployerSignup({
-        company_name: companyName.trim(),
-        contact_person: contactPerson.trim(),
-        phone: phone.trim(),
-      });
-      navigate({ to: "/Employer/dashboard" });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't complete your registration.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   if (step === "finishing") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -202,19 +175,12 @@ function EmployerAuthPage() {
                   Check your <span className="text-blue">email</span>
                 </>
               )}
-              {step === "details" && (
-                <>
-                  Tell us about your <span className="text-blue">company</span>
-                </>
-              )}
             </h1>
             <p className="mt-3 text-sm text-ink">
               {step === "email" &&
                 "New here or returning — just enter your work email to get started."}
               {step === "sent" &&
                 `We sent a sign-in link to ${email}. Open it on this device to continue.`}
-              {step === "details" &&
-                "One-time setup. Our team reviews new employer accounts before they go live."}
             </p>
           </div>
 
@@ -288,80 +254,6 @@ function EmployerAuthPage() {
                 <ArrowLeft className="h-3.5 w-3.5" /> Use a different email
               </button>
             </div>
-          )}
-
-          {step === "details" && (
-            <form
-              onSubmit={handleCompleteSignup}
-              className="mt-8 rounded-[28px] border border-border bg-white p-8 shadow-[0_20px_60px_-30px_rgba(11,31,58,0.3)]"
-            >
-              <div className="mb-4">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
-                  Company Name
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
-                  <Building2 className="h-4 w-4 text-blue" />
-                  <input
-                    type="text"
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    required
-                    autoFocus
-                    placeholder="Acme Contracting LLC"
-                    className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
-                  Contact Person
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
-                  <User className="h-4 w-4 text-blue" />
-                  <input
-                    type="text"
-                    value={contactPerson}
-                    onChange={(e) => setContactPerson(e.target.value)}
-                    required
-                    placeholder="Jane Doe"
-                    className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
-                  />
-                </div>
-              </div>
-
-              <div className="mb-5">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
-                  Phone
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
-                  <Phone className="h-4 w-4 text-blue" />
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                    placeholder="+971 50 123 4567"
-                    className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={
-                  submitting || !companyName.trim() || !contactPerson.trim() || !phone.trim()
-                }
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue disabled:opacity-60"
-              >
-                {submitting ? "Submitting..." : "Submit for Review"}
-                {!submitting && <ArrowRight className="h-4 w-4" />}
-              </button>
-            </form>
           )}
 
           <p className="mt-6 text-center text-xs text-ink">

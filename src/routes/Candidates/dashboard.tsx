@@ -9,6 +9,7 @@ import VisaCard from "@/components/Candidate/Dashboard/VisaCard";
 import RecentActivity from "@/components/Candidate/Dashboard/RecentActivity";
 import QuickActions from "@/components/Candidate/Dashboard/QuickActions";
 import DashboardSkeleton from "@/components/Candidate/Dashboard/DashboardSkeleton";
+import WelcomeBanner from "@/components/Candidate/Dashboard/WelcomeBanner";
 
 import { useDashboard } from "@/lib/candidate/hooks";
 
@@ -35,6 +36,8 @@ function CandidateDashboard() {
 
   return (
     <div className="space-y-6">
+      {data.isNewProfile && <WelcomeBanner />}
+
       <DashboardStats dashboard={data} />
 
       <div className="grid gap-6 xl:grid-cols-3">
@@ -45,7 +48,7 @@ function CandidateDashboard() {
         </div>
 
         <div className="space-y-6">
-          <ProfileCompletion completion={data.profileCompletion} />
+          <ProfileCompletion completion={data.profileCompletion} sections={data.profileSections} />
 
           <UpcomingInterview />
 

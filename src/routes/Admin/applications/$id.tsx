@@ -5,10 +5,27 @@ import VisaCard from "./components/VisaCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MedicalCard from "./components/MedicalCard";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import DocumentsCard from "./components/DocumentsCard";
-import { getApplication, getTimeline } from "@/lib/recruitment/api";
+import { getApplication, getTimeline, updateApplicationStage } from "@/lib/recruitment/api";
 import InterviewCard from "./components/InterviewCard";
 import DeploymentCard from "./components/DeploymentCard";
+import {
+  APPLICATION_STATUS_LABELS,
+  APPLICATION_STATUS_STYLES,
+  getForwardStage,
+  getNextStages,
+  isApplicationStatus,
+} from "@/lib/admin/applicationStatus";
 export const Route = createFileRoute("/Admin/applications/$id")({
   component: ApplicationDetails,
 });
@@ -21,6 +38,10 @@ function ApplicationDetails() {
   const [application, setApplication] = useState<any>(null);
 
   const [timeline, setTimeline] = useState<any[]>([]);
+
+  const [selectedStage, setSelectedStage] = useState<string>("");
+  const [notes, setNotes] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     load();
@@ -37,6 +58,12 @@ function ApplicationDetails() {
 
       setApplication(applicationData);
       setTimeline(Array.isArray(timelineData) ? timelineData : []);
+      setNotes(applicationData?.admin_notes ?? "");
+      setSelectedStage(
+        getForwardStage(applicationData?.internal_status) ??
+          getNextStages(applicationData?.internal_status)[0] ??
+          "",
+      );
     } finally {
       setLoading(false);
     }
@@ -48,6 +75,23 @@ function ApplicationDetails() {
         <Loader2 className="animate-spin" />
       </div>
     );
+  }
+
+  const currentStatus = application.internal_status;
+  const nextStages = getNextStages(currentStatus);
+  const isTerminal = isApplicationStatus(currentStatus) && nextStages.length === 0;
+
+  async function handleUpdateStage() {
+    if (!selectedStage) return;
+
+    setUpdating(true);
+
+    try {
+      await updateApplicationStage(id, selectedStage, notes || undefined);
+      await load();
+    } finally {
+      setUpdating(false);
+    }
   }
 
   return (
@@ -121,8 +165,69 @@ function ApplicationDetails() {
           <CardTitle>Recruitment Status</CardTitle>
         </CardHeader>
 
-        <CardContent>
-          <Badge>{application.internal_status}</Badge>
+        <CardContent className="space-y-5">
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Current Stage
+            </p>
+
+            <Badge
+              className={
+                isApplicationStatus(currentStatus)
+                  ? APPLICATION_STATUS_STYLES[currentStatus]
+                  : undefined
+              }
+            >
+              {isApplicationStatus(currentStatus)
+                ? APPLICATION_STATUS_LABELS[currentStatus]
+                : (currentStatus ?? "Unknown")}
+            </Badge>
+          </div>
+
+          {isTerminal ? (
+            <p className="text-sm text-muted-foreground">
+              This application is in a terminal stage - no further stage changes are possible.
+            </p>
+          ) : (
+            <div className="space-y-4 border-t pt-5">
+              <div>
+                <Label>Move To</Label>
+
+                <Select value={selectedStage} onValueChange={setSelectedStage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select next stage" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {nextStages.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {APPLICATION_STATUS_LABELS[status]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Notes</Label>
+
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Optional note about this stage change"
+                  className="min-h-[80px]"
+                />
+              </div>
+
+              <Button onClick={handleUpdateStage} disabled={!selectedStage || updating}>
+                {updating
+                  ? "Updating…"
+                  : selectedStage
+                    ? `Move to ${APPLICATION_STATUS_LABELS[selectedStage as keyof typeof APPLICATION_STATUS_LABELS]}`
+                    : "Update Stage"}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -29,6 +29,11 @@ export default function JobActions({ job }: Props) {
   }
 
   async function handleApply() {
+    if (!job.id) {
+      console.error("JobActions: refusing to apply — job.id is missing.", job);
+      return;
+    }
+
     await apply.mutateAsync(job.id);
   }
 

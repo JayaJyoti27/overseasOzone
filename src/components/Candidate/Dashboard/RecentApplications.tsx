@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+import { formatDate } from "@/lib/candidate/format";
+
 import { useApplications } from "@/lib/candidate/hooks";
 
 function statusVariant(status: string) {
@@ -93,16 +95,16 @@ export default function RecentApplications() {
         <CardTitle>Recent Applications</CardTitle>
 
         <Button variant="ghost" asChild>
-          <Link to="/Candidate/applications">View All</Link>
+          <Link to="/Candidates/applications">View All</Link>
         </Button>
       </CardHeader>
 
       <CardContent>
         <div className="space-y-4">
-          {data.slice(0, 5).map((application) => (
+          {data.slice(0, 5).map((application: any) => (
             <Link
               key={application.id}
-              to="/Candidate/applications/$id"
+              to="/Candidates/applications/$id"
               params={{
                 id: application.id,
               }}
@@ -121,7 +123,7 @@ export default function RecentApplications() {
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <CalendarDays className="h-4 w-4" />
 
-                      {new Date(application.created_at).toLocaleDateString()}
+                      {formatDate(application.applied_at ?? application.created_at)}
                     </span>
                   </div>
                 </div>
