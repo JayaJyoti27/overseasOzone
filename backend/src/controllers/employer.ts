@@ -5,12 +5,15 @@ import {
   getEmployerCandidates,
   rejectEmployerCandidate,
   scheduleEmployerInterview,
-  uploadOfferLetterDocument,
+  completeEmployerInterview,
+  issueOfferLetter,
+  approveDocumentsVerification,
 } from "../services/employer/candidate";
 import * as StorageService from "../services/storage";
 import {
   EmployerScheduleInterviewSchema,
   EmployerRejectCandidateSchema,
+  EmployerCompleteInterviewSchema,
 } from "../validators/interviewSchema";
 
 /*
@@ -474,32 +477,56 @@ export async function scheduleCandidateInterview(req: Request, res: Response) {
   }
 }
 
-export async function uploadCandidateOfferLetter(req: Request, res: Response) {
+export async function completeCandidateInterview(req: Request, res: Response) {
+  try {
+    const parsed = EmployerCompleteInterviewSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({ success: false, errors: parsed.error.flatten() });
+    }
+
+    const data = await completeEmployerInterview(
+      req.employerId!,
+      String(req.params.id),
+      parsed.data.result,
+      parsed.data.feedback,
+    );
+
+    return res.json({ success: true, data });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
+  }
+}
+
+export async function issueCandidateOfferLetter(req: Request, res: Response) {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: "No file was uploaded." });
     }
 
+    const employerId = req.employerId!;
     const candidateId = String(req.params.id);
-    const path = `${candidateId}/offer_letter/${Date.now()}-${req.file.originalname}`;
+    const path = `${employerId}/offer-letters/${candidateId}/${Date.now()}-${req.file.originalname}`;
 
     const publicUrl = await StorageService.uploadDocument(
-      "candidate-documents",
+      "employer-documents",
       path,
       req.file.buffer,
       req.file.mimetype,
     );
 
-    const data = await uploadOfferLetterDocument(req.employerId!, candidateId, {
-      file_name: req.file.originalname,
-      original_file_name: req.file.originalname,
-      mime_type: req.file.mimetype,
-      file_size: req.file.size,
-      storage_path: path,
-      public_url: publicUrl,
-    });
+    const data = await issueOfferLetter(employerId, candidateId, publicUrl);
 
     return res.status(201).json({ success: true, data });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
+  }
+}
+
+export async function approveCandidateDocuments(req: Request, res: Response) {
+  try {
+    const data = await approveDocumentsVerification(req.employerId!, String(req.params.id));
+    return res.json({ success: true, data });
   } catch (err: any) {
     return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
   }

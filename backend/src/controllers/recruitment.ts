@@ -252,7 +252,7 @@ export async function getMedicals(req: Request, res: Response) {
 export async function scheduleMedical(req: Request, res: Response) {
   const data = await RecruitmentService.scheduleMedical(
     String(req.params.applicationId),
-    ADMIN_ID,
+    req.adminId!,
     req.body,
   );
 
@@ -306,7 +306,7 @@ export async function getVisas(req: Request, res: Response) {
 export async function createVisa(req: Request, res: Response) {
   const data = await RecruitmentService.createVisa(
     String(req.params.applicationId),
-    ADMIN_ID,
+    req.adminId!,
     req.body,
   );
 
@@ -451,7 +451,7 @@ export async function getVisa(req: Request, res: Response) {
 }
 
 export async function submitVisa(req: Request, res: Response) {
-  const data = await RecruitmentService.submitVisa(String(req.params.id));
+  const data = await RecruitmentService.submitVisa(String(req.params.id), req.adminId);
 
   res.json({
     success: true,
@@ -460,7 +460,11 @@ export async function submitVisa(req: Request, res: Response) {
 }
 
 export async function rejectVisa(req: Request, res: Response) {
-  const data = await RecruitmentService.rejectVisa(String(req.params.id), req.body.remarks, req.adminId);
+  const data = await RecruitmentService.rejectVisa(
+    String(req.params.id),
+    req.body.remarks,
+    req.adminId,
+  );
 
   res.json({
     success: true,

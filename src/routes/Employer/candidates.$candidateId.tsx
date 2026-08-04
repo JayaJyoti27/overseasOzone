@@ -7,7 +7,9 @@ import { CandidateProfileCard } from "@/components/Employer/Candidate/Details/Ca
 import { CandidateDocumentsCard } from "@/components/Employer/Candidate/Details/CandidateDocumentsCard";
 import { InterviewCard } from "@/components/Employer/Candidate/InterviewCard";
 import { ScheduleInterviewDialog } from "@/components/Employer/Candidate/ScheduleInterviewDialog";
-import { OfferLetterCard } from "@/components/Employer/Candidate/OfferLetterCard";
+import { CompleteInterviewDialog } from "@/components/Employer/Candidate/CompleteInterviewDialog";
+import { IssueOfferLetterButton } from "@/components/Employer/Candidate/IssueOfferLetterButton";
+import { ApproveDocumentsButton } from "@/components/Employer/Candidate/ApproveDocumentsButton";
 import { getCandidate } from "@/lib/employer/api";
 
 export const Route = createFileRoute("/Employer/candidates/$candidateId")({
@@ -71,11 +73,18 @@ function CandidateDetailsPage() {
             <ScheduleInterviewDialog candidateId={candidateId} onScheduled={load} />
           )}
 
-          <OfferLetterCard
-            candidateId={candidateId}
-            documents={data.documents ?? []}
-            onUploaded={load}
-          />
+          {data.application?.internal_status === "interview_scheduled" &&
+            data.interview?.status !== "completed" && (
+              <CompleteInterviewDialog candidateId={candidateId} onCompleted={load} />
+            )}
+
+          {data.application?.internal_status === "selected" && (
+            <IssueOfferLetterButton candidateId={candidateId} onIssued={load} />
+          )}
+
+          {data.application?.internal_status === "documents_verification" && (
+            <ApproveDocumentsButton candidateId={candidateId} onApproved={load} />
+          )}
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import type { AxiosError } from "axios";
 
 import * as api from "./api";
 import type { Candidate } from "./types";
+export type { CandidateOffer } from "./types";
 
 type ApiError = AxiosError<{ message?: string }>;
 
@@ -291,32 +292,6 @@ export function useInterviews() {
    Offers
 ========================================================== */
 
-export interface CandidateOffer {
-  id: string;
-  application_id: string;
-  job_order_id: string;
-  employer_id: string;
-  candidate_id: string;
-  job_title: string | null;
-  company_name: string | null;
-  salary: number | null;
-  currency: string | null;
-  contract_duration: string | null;
-  joining_date: string | null;
-  location: string | null;
-  accommodation: boolean;
-  transport: boolean;
-  food: boolean;
-  notes: string | null;
-  offer_letter_url: string | null;
-  status: "draft" | "sent" | "viewed" | "accepted" | "rejected" | "withdrawn" | "expired";
-  sent_at: string | null;
-  viewed_at: string | null;
-  responded_at: string | null;
-  expires_at: string | null;
-  created_at: string;
-}
-
 export function useOffers() {
   return useQuery({
     queryKey: candidateKeys.offers,
@@ -329,7 +304,7 @@ export function useAcceptOffer() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: api.acceptOffer,
+    mutationFn: ({ id }: { id: string }) => api.acceptOffer(id),
 
     onSuccess: () => {
       qc.invalidateQueries({

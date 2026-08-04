@@ -179,13 +179,30 @@ export async function rejectCandidate(id: string, reason: string) {
   return data.data;
 }
 
-export async function uploadCandidateOfferLetter(id: string, file: File) {
+export async function completeCandidateInterview(
+  id: string,
+  result: "selected" | "rejected",
+  feedback?: string,
+) {
+  const { data } = await api.patch(`/employer/candidates/${id}/complete-interview`, {
+    result,
+    feedback,
+  });
+  return data.data;
+}
+
+export async function issueCandidateOfferLetter(id: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
   const { data } = await api.post(`/employer/candidates/${id}/offer-letter`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return data.data;
+}
+
+export async function approveCandidateDocuments(id: string) {
+  const { data } = await api.patch(`/employer/candidates/${id}/approve-documents`);
   return data.data;
 }
 export async function getDocuments() {

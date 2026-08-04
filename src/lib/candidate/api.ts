@@ -1,6 +1,6 @@
 import axios from "axios";
 import { supabase } from "@/lib/supabase";
-import type { CandidateDocument, CandidateJob } from "./types";
+import type { CandidateDocument, CandidateJob, CandidateOffer } from "./types";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -151,7 +151,7 @@ export const deleteDocument = async (documentId: string) => {
    OFFERS
 ========================================================= */
 
-export const getOffers = async () => {
+export const getOffers = async (): Promise<CandidateOffer[]> => {
   const response = await api.get("/candidate/offers");
   return response.data.data ?? [];
 };

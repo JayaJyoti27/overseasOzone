@@ -35,6 +35,7 @@ export default function MedicalCard({ applicationId }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [hospitalName, setHospitalName] = useState("");
   const [examDate, setExamDate] = useState("");
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -54,6 +55,7 @@ export default function MedicalCard({ applicationId }: Props) {
     if (!hospitalName || !examDate) return;
 
     setScheduling(true);
+    setScheduleError(null);
     try {
       await scheduleMedical(applicationId, {
         hospital_name: hospitalName,
@@ -65,7 +67,9 @@ export default function MedicalCard({ applicationId }: Props) {
       await load();
     } catch (err) {
       console.error("Failed to schedule medical", err);
-      // TODO: surface error toast
+      setScheduleError(
+        err instanceof Error ? err.message : "Couldn't schedule the medical. Try again.",
+      );
     } finally {
       setScheduling(false);
     }
@@ -88,47 +92,6 @@ export default function MedicalCard({ applicationId }: Props) {
     load();
   }
 
-  function ScheduleDialog({ children }: { children: React.ReactNode }) {
-    return (
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Schedule Medical</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div>
-              <Label htmlFor="hospital_name">Hospital</Label>
-              <Input
-                id="hospital_name"
-                placeholder="Hospital name"
-                value={hospitalName}
-                onChange={(e) => setHospitalName(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="exam_date">Exam Date</Label>
-              <Input
-                id="exam_date"
-                type="date"
-                value={examDate}
-                onChange={(e) => setExamDate(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button onClick={handleSchedule} disabled={scheduling || !hospitalName || !examDate}>
-              {scheduling ? "Scheduling..." : "Confirm"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -144,9 +107,59 @@ export default function MedicalCard({ applicationId }: Props) {
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">No medical scheduled.</p>
 
-            <ScheduleDialog>
-              <Button>Schedule Medical</Button>
-            </ScheduleDialog>
+            <Dialog
+              open={dialogOpen}
+              onOpenChange={(open) => {
+                setDialogOpen(open);
+                if (!open) setScheduleError(null);
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>Schedule Medical</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Schedule Medical</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  <div>
+                    <Label htmlFor="hospital_name">Hospital</Label>
+                    <Input
+                      id="hospital_name"
+                      placeholder="Hospital name"
+                      value={hospitalName}
+                      onChange={(e) => setHospitalName(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="exam_date">Exam Date</Label>
+                    <Input
+                      id="exam_date"
+                      type="date"
+                      value={examDate}
+                      onChange={(e) => setExamDate(e.target.value)}
+                    />
+                  </div>
+
+                  {scheduleError && (
+                    <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                      {scheduleError}
+                    </p>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    onClick={handleSchedule}
+                    disabled={scheduling || !hospitalName || !examDate}
+                  >
+                    {scheduling ? "Scheduling..." : "Confirm"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         ) : (
           <div className="space-y-4">

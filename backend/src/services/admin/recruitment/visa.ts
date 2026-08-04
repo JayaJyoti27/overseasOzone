@@ -109,22 +109,30 @@ export async function createVisa(
   applicationId: string,
   createdBy: string,
   payload: {
-    candidate_id: string;
-    employer_id: string;
-    job_order_id: string;
     passport_number: string;
     embassy_name: string;
   },
 ) {
+  const { data: application, error: appError } = await supabase
+    .from("applications")
+    .select("candidate_id, employer_id, job_order_id")
+    .eq("id", applicationId)
+    .single();
+
+  if (appError || !application) {
+    throw new NotFoundError("Application not found.");
+  }
+
   const { data, error } = await supabase
     .from("visas")
     .insert({
       application_id: applicationId,
-
       created_by: createdBy,
-
-      ...payload,
-
+      candidate_id: application.candidate_id,
+      employer_id: application.employer_id,
+      job_order_id: application.job_order_id,
+      passport_number: payload.passport_number,
+      embassy_name: payload.embassy_name,
       status: "pending",
     })
     .select()
@@ -142,7 +150,7 @@ export async function createVisa(
 |--------------------------------------------------------------------------
 */
 
-export async function submitVisa(visaId: string) {
+export async function submitVisa(visaId: string, changedBy?: string) {
   const { data, error } = await supabase
     .from("visas")
     .update({
@@ -156,9 +164,19 @@ export async function submitVisa(visaId: string) {
     .select()
     .single();
 
-  if (error) {
+  if (error || !data) {
     throw new DatabaseError("Unable to submit visa.", error);
   }
+  await supabase
+    .from("applications")
+    .update({
+      internal_status: "visa_submitted",
+      last_status_change: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", data.application_id);
+
+  await recordStatusChange(data.application_id, "visa_submitted", { changedBy });
 
   return data;
 }

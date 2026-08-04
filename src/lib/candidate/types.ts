@@ -262,6 +262,10 @@ export interface CandidateInterview {
 export interface CandidateOffer {
   id: string;
 
+  application_id: string;
+
+  job_order_id: string;
+
   job_title: string;
 
   company_name: string;
@@ -281,6 +285,8 @@ export interface CandidateOffer {
   transport?: boolean;
 
   food?: boolean;
+
+  notes?: string;
 
   offer_letter_url?: string;
 

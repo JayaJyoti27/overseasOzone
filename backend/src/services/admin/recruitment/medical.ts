@@ -110,23 +110,37 @@ export async function scheduleMedical(
   applicationId: string,
   scheduledBy: string,
   payload: {
-    candidate_id: string;
-    employer_id: string;
-    job_order_id: string;
     hospital_name: string;
     doctor_name?: string;
     appointment_date: string;
     remarks?: string;
   },
 ) {
+  const { data: application, error: applicationError } = await supabase
+    .from("applications")
+    .select("id, candidate_id, employer_id, job_order_id")
+    .eq("id", applicationId)
+    .single();
+
+  if (applicationError || !application) {
+    throw new NotFoundError("Application not found.");
+  }
+
   const { data, error } = await supabase
     .from("medicals")
     .insert({
       application_id: applicationId,
 
+      candidate_id: application.candidate_id,
+      employer_id: application.employer_id,
+      job_order_id: application.job_order_id,
+
       scheduled_by: scheduledBy,
 
-      ...payload,
+      hospital_name: payload.hospital_name,
+      doctor_name: payload.doctor_name,
+      appointment_date: payload.appointment_date,
+      remarks: payload.remarks,
 
       status: "scheduled",
     })

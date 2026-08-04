@@ -187,10 +187,19 @@ export const getVisas = async (applicationId?: string) => {
 
   return data;
 };
-
-export const submitVisa = async (applicationId: string, payload: any) => {
+export const createVisa = async (
+  applicationId: string,
+  payload: {
+    passport_number: string;
+    embassy_name: string;
+  },
+) => {
   const { data } = await api.post(`/recruitment/applications/${applicationId}/visa`, payload);
 
+  return data.data;
+};
+export const submitVisa = async (visaId: string) => {
+  const { data } = await api.patch(`/recruitment/visas/${visaId}/submit`);
   return data.data;
 };
 

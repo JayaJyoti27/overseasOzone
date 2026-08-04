@@ -81,3 +81,12 @@ export const EmployerScheduleInterviewSchema = z.object({
 export const EmployerRejectCandidateSchema = z.object({
   reason: z.string().min(5),
 });
+
+export const EmployerCompleteInterviewSchema = z.object({
+  // Binary on purpose - the employer marking their own interview done only
+  // ever means "moving forward" or "not moving forward". "hold"/"next_round"
+  // (admin's INTERVIEW_RESULT superset) stay an admin-only nuance.
+  result: z.enum(["selected", "rejected"]),
+
+  feedback: z.string().optional(),
+});

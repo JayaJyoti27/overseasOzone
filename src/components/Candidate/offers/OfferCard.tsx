@@ -59,7 +59,7 @@ export default function OfferCard({ offer }: Props) {
           <>
             <Button
               onClick={() =>
-                reject.mutate({
+                accept.mutate({
                   id: offer.id,
                 })
               }

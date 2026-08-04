@@ -2,11 +2,27 @@ import { useEffect, useState } from "react";
 import { BadgeCheck, Loader2, IdCard } from "lucide-react";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
-import { getVisas, submitVisa, approveVisa, issueVisa, rejectVisa } from "@/lib/recruitment/api";
+import {
+  getVisas,
+  createVisa,
+  submitVisa,
+  approveVisa,
+  issueVisa,
+  rejectVisa,
+} from "@/lib/recruitment/api";
 
 interface Props {
   applicationId: string;
@@ -15,6 +31,12 @@ interface Props {
 export default function VisaCard({ applicationId }: Props) {
   const [loading, setLoading] = useState(true);
   const [visas, setVisas] = useState<any[]>([]);
+
+  const [creating, setCreating] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [passportNumber, setPassportNumber] = useState("");
+  const [embassyName, setEmbassyName] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -28,6 +50,30 @@ export default function VisaCard({ applicationId }: Props) {
       setVisas(data.visas ?? []);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCreate() {
+    if (!passportNumber || !embassyName) return;
+
+    setCreating(true);
+    setCreateError(null);
+    try {
+      await createVisa(applicationId, {
+        passport_number: passportNumber,
+        embassy_name: embassyName,
+      });
+      setCreateDialogOpen(false);
+      setPassportNumber("");
+      setEmbassyName("");
+      await load();
+    } catch (err) {
+      console.error("Failed to create visa", err);
+      setCreateError(
+        err instanceof Error ? err.message : "Couldn't create the visa record. Try again.",
+      );
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -72,7 +118,63 @@ export default function VisaCard({ applicationId }: Props) {
             <Loader2 className="animate-spin" />
           </div>
         ) : visas.length === 0 ? (
-          <p className="text-muted-foreground">No visa created.</p>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">No visa created.</p>
+
+            <Dialog
+              open={createDialogOpen}
+              onOpenChange={(open) => {
+                setCreateDialogOpen(open);
+                if (!open) setCreateError(null);
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>Create Visa</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create Visa</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  <div>
+                    <Label htmlFor="passport_number">Passport Number</Label>
+                    <Input
+                      id="passport_number"
+                      placeholder="Passport number"
+                      value={passportNumber}
+                      onChange={(e) => setPassportNumber(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="embassy_name">Embassy</Label>
+                    <Input
+                      id="embassy_name"
+                      placeholder="Embassy name"
+                      value={embassyName}
+                      onChange={(e) => setEmbassyName(e.target.value)}
+                    />
+                  </div>
+
+                  {createError && (
+                    <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                      {createError}
+                    </p>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={creating || !passportNumber || !embassyName}
+                  >
+                    {creating ? "Creating..." : "Confirm"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         ) : (
           <div className="space-y-4">
             {visas.map((visa) => (
@@ -85,7 +187,7 @@ export default function VisaCard({ applicationId }: Props) {
                       <span className="font-medium">{visa.visa_number ?? "Pending"}</span>
                     </div>
 
-                    <p className="mt-2 text-sm text-muted-foreground">{visa.country}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{visa.embassy_name}</p>
                   </div>
 
                   <Badge>{visa.status}</Badge>
