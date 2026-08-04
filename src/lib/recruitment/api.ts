@@ -141,8 +141,8 @@ export const getDeployments = async (applicationId?: string) => {
   return data;
 };
 
-export const createDeployment = async (applicationId: string, payload: any) => {
-  const { data } = await api.post(`/recruitment/applications/${applicationId}/deployment`, payload);
+export const createDeployment = async (applicationId: string) => {
+  const { data } = await api.post(`/recruitment/applications/${applicationId}/deployment`);
 
   return data.data;
 };
@@ -203,18 +203,12 @@ export const submitVisa = async (visaId: string) => {
   return data.data;
 };
 
-export const approveVisa = async (
-  visaId: string,
-  payload: {
-    visaNumber: string;
-    issueDate: string;
-    expiryDate: string;
-  },
-) => {
-  const { data } = await api.patch(`/recruitment/visas/${visaId}/approve`, payload);
+export const approveVisa = async (visaId: string) => {
+  const { data } = await api.patch(`/recruitment/visas/${visaId}/approve`);
 
   return data.data;
 };
+
 export const issueVisa = async (visaId: string, payload?: any) => {
   const { data } = await api.patch(`/recruitment/visas/${visaId}/issue`, payload);
 

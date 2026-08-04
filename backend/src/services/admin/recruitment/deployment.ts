@@ -111,25 +111,39 @@ export async function getDeployment(deploymentId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function createDeployment(
-  applicationId: string,
-  createdBy: string,
-  payload: {
-    candidate_id: string;
-    employer_id: string;
-    job_order_id: string;
-    visa_id: string;
-  },
-) {
+export async function createDeployment(applicationId: string, createdBy: string) {
+  const { data: application, error: appError } = await supabase
+    .from("applications")
+    .select("candidate_id, employer_id, job_order_id")
+    .eq("id", applicationId)
+    .single();
+
+  if (appError || !application) {
+    throw new NotFoundError("Application not found.");
+  }
+
+  const { data: visa, error: visaError } = await supabase
+    .from("visas")
+    .select("id")
+    .eq("application_id", applicationId)
+    .eq("status", "issued")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (visaError || !visa) {
+    throw new NotFoundError("No issued visa found for this application yet.");
+  }
+
   const { data, error } = await supabase
     .from("deployments")
     .insert({
       application_id: applicationId,
-
       created_by: createdBy,
-
-      ...payload,
-
+      candidate_id: application.candidate_id,
+      employer_id: application.employer_id,
+      job_order_id: application.job_order_id,
+      visa_id: visa.id,
       status: "pending",
     })
     .select()
@@ -209,7 +223,11 @@ export async function markDeparted(deploymentId: string) {
 |--------------------------------------------------------------------------
 */
 
-export async function completeDeployment(deploymentId: string, remarks?: string, changedBy?: string) {
+export async function completeDeployment(
+  deploymentId: string,
+  remarks?: string,
+  changedBy?: string,
+) {
   const { data, error } = await supabase
     .from("deployments")
     .update({
