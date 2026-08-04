@@ -178,6 +178,16 @@ export async function rejectCandidate(id: string, reason: string) {
   const { data } = await api.patch(`/employer/candidates/${id}/reject`, { reason });
   return data.data;
 }
+
+export async function uploadCandidateOfferLetter(id: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const { data } = await api.post(`/employer/candidates/${id}/offer-letter`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.data;
+}
 export async function getDocuments() {
   const { data } = await api.get("/employer/documents");
   return data.data;

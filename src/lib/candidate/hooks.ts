@@ -291,6 +291,32 @@ export function useInterviews() {
    Offers
 ========================================================== */
 
+export interface CandidateOffer {
+  id: string;
+  application_id: string;
+  job_order_id: string;
+  employer_id: string;
+  candidate_id: string;
+  job_title: string | null;
+  company_name: string | null;
+  salary: number | null;
+  currency: string | null;
+  contract_duration: string | null;
+  joining_date: string | null;
+  location: string | null;
+  accommodation: boolean;
+  transport: boolean;
+  food: boolean;
+  notes: string | null;
+  offer_letter_url: string | null;
+  status: "draft" | "sent" | "viewed" | "accepted" | "rejected" | "withdrawn" | "expired";
+  sent_at: string | null;
+  viewed_at: string | null;
+  responded_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
 export function useOffers() {
   return useQuery({
     queryKey: candidateKeys.offers,

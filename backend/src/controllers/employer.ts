@@ -5,6 +5,7 @@ import {
   getEmployerCandidates,
   rejectEmployerCandidate,
   scheduleEmployerInterview,
+  uploadOfferLetterDocument,
 } from "../services/employer/candidate";
 import * as StorageService from "../services/storage";
 import {
@@ -465,6 +466,37 @@ export async function scheduleCandidateInterview(req: Request, res: Response) {
     const data = await scheduleEmployerInterview(req.employerId!, String(req.params.id), {
       ...parsed.data,
       interview_date: parsed.data.interview_date.toISOString(),
+    });
+
+    return res.status(201).json({ success: true, data });
+  } catch (err: any) {
+    return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
+  }
+}
+
+export async function uploadCandidateOfferLetter(req: Request, res: Response) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No file was uploaded." });
+    }
+
+    const candidateId = String(req.params.id);
+    const path = `${candidateId}/offer_letter/${Date.now()}-${req.file.originalname}`;
+
+    const publicUrl = await StorageService.uploadDocument(
+      "candidate-documents",
+      path,
+      req.file.buffer,
+      req.file.mimetype,
+    );
+
+    const data = await uploadOfferLetterDocument(req.employerId!, candidateId, {
+      file_name: req.file.originalname,
+      original_file_name: req.file.originalname,
+      mime_type: req.file.mimetype,
+      file_size: req.file.size,
+      storage_path: path,
+      public_url: publicUrl,
     });
 
     return res.status(201).json({ success: true, data });

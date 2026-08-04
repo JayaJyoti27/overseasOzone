@@ -49,8 +49,6 @@ function CandidateProfile() {
         <LanguagesSection candidate={data.data} />
 
         <ResumeSection />
-
-        <CertificatesSection />
       </div>
     </div>
   );

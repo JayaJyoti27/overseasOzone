@@ -25,6 +25,7 @@ import {
   getCandidates,
   rejectCandidate,
   scheduleCandidateInterview,
+  uploadCandidateOfferLetter,
   getJobOrderLegalizationDocuments,
   uploadJobOrderLegalizationDocument,
 } from "../controllers/employer";
@@ -108,6 +109,11 @@ router.get("/candidates", getCandidates);
 router.get("/candidates/:id", getCandidate);
 router.patch("/candidates/:id/reject", rejectCandidate);
 router.post("/candidates/:id/schedule-interview", scheduleCandidateInterview);
+router.post(
+  "/candidates/:id/offer-letter",
+  upload.single("file"),
+  uploadCandidateOfferLetter,
+);
 
 /*
 |--------------------------------------------------------------------------

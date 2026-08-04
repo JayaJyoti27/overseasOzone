@@ -107,16 +107,6 @@ export default function ApplicationCard({ application }: Props) {
         </Badge>
       </div>
 
-      <div className="mt-6">
-        <div className="mb-2 flex justify-between text-sm">
-          <span>Recruitment Progress</span>
-
-          <span>{progress(application.status)}%</span>
-        </div>
-
-        <Progress value={progress(application.status)} />
-      </div>
-
       <div className="mt-8 flex flex-wrap gap-3">
         <Button asChild>
           <Link

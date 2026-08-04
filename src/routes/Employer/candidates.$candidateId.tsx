@@ -7,6 +7,7 @@ import { CandidateProfileCard } from "@/components/Employer/Candidate/Details/Ca
 import { CandidateDocumentsCard } from "@/components/Employer/Candidate/Details/CandidateDocumentsCard";
 import { InterviewCard } from "@/components/Employer/Candidate/InterviewCard";
 import { ScheduleInterviewDialog } from "@/components/Employer/Candidate/ScheduleInterviewDialog";
+import { OfferLetterCard } from "@/components/Employer/Candidate/OfferLetterCard";
 import { getCandidate } from "@/lib/employer/api";
 
 export const Route = createFileRoute("/Employer/candidates/$candidateId")({
@@ -69,6 +70,12 @@ function CandidateDetailsPage() {
           {data.application?.internal_status === "employer_shortlisted" && !data.interview && (
             <ScheduleInterviewDialog candidateId={candidateId} onScheduled={load} />
           )}
+
+          <OfferLetterCard
+            candidateId={candidateId}
+            documents={data.documents ?? []}
+            onUploaded={load}
+          />
         </div>
       </div>
     </div>

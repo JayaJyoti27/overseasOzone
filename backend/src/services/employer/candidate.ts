@@ -1,5 +1,8 @@
 import { supabase } from "../../config/supabase";
-import { EMPLOYER_VISIBLE_STATUSES, APPLICATION_STATUS_FLOW } from "../../constants/applicationStatus";
+import {
+  EMPLOYER_VISIBLE_STATUSES,
+  APPLICATION_STATUS_FLOW,
+} from "../../constants/applicationStatus";
 import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
 import { recordStatusChange } from "../admin/recruitment/statusHistory";
 
@@ -49,7 +52,10 @@ export async function getEmployerCandidate(employerId: string, candidateId: stri
     .order("applied_at", { ascending: false });
 
   if (appError) {
-    console.error(`[getEmployerCandidate] applications query failed for candidate ${candidateId}:`, appError);
+    console.error(
+      `[getEmployerCandidate] applications query failed for candidate ${candidateId}:`,
+      appError,
+    );
     throw new DatabaseError("Unable to fetch candidate applications.", appError);
   }
   if (!applications || applications.length === 0) {
@@ -238,7 +244,8 @@ export async function scheduleEmployerInterview(
 ) {
   const application = await getEmployerVisibleApplication(employerId, candidateId);
 
-  const allowedNext = APPLICATION_STATUS_FLOW[application.internal_status as keyof typeof APPLICATION_STATUS_FLOW];
+  const allowedNext =
+    APPLICATION_STATUS_FLOW[application.internal_status as keyof typeof APPLICATION_STATUS_FLOW];
   if (!allowedNext?.includes("interview_scheduled")) {
     throw new ConflictError(
       "This candidate isn't at the shortlisted stage yet, so an interview can't be scheduled.",
@@ -301,4 +308,58 @@ async function getEmployerVisibleApplication(employerId: string, candidateId: st
   if (!application) throw new NotFoundError("Candidate not found.");
 
   return application;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Offer Letter Upload
+|--------------------------------------------------------------------------
+| Employer uploads the offer letter file for a candidate. Stored as a row
+| in the shared `documents` table with document_type "offer_letter" (an
+| already-valid type — see validators/documentSchema.ts), scoped to both
+| candidate_id and application_id. That's the only thing needed for it to
+| show up automatically:
+|   - Admin: DocumentsCard on the application detail page already lists
+|     every document for that application_id, no admin changes needed.
+|   - Candidate: their Documents page already lists every document for
+|     their candidate_id, no candidate changes needed.
+*/
+
+export async function uploadOfferLetterDocument(
+  employerId: string,
+  candidateId: string,
+  payload: {
+    file_name: string;
+    original_file_name?: string;
+    mime_type?: string;
+    file_size?: number;
+    storage_path: string;
+    public_url: string;
+  },
+) {
+  const application = await getEmployerVisibleApplication(employerId, candidateId);
+
+  const { data, error } = await supabase
+    .from("documents")
+    .insert({
+      candidate_id: candidateId,
+      application_id: application.id,
+      employer_id: employerId,
+      document_type: "offer_letter",
+      file_name: payload.file_name,
+      original_file_name: payload.original_file_name ?? payload.file_name,
+      mime_type: payload.mime_type,
+      file_size: payload.file_size,
+      storage_path: payload.storage_path,
+      public_url: payload.public_url,
+      status: "pending",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw new DatabaseError("Unable to upload offer letter.", error);
+
+  return data;
 }
