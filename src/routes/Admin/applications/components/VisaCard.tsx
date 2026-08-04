@@ -38,6 +38,13 @@ export default function VisaCard({ applicationId }: Props) {
   const [embassyName, setEmbassyName] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
 
+  const [approving, setApproving] = useState(false);
+  const [approveDialogVisaId, setApproveDialogVisaId] = useState<string | null>(null);
+  const [visaNumber, setVisaNumber] = useState("");
+  const [issueDate, setIssueDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [approveError, setApproveError] = useState<string | null>(null);
+
   useEffect(() => {
     load();
   }, [applicationId]);
@@ -82,15 +89,33 @@ export default function VisaCard({ applicationId }: Props) {
     load();
   }
 
-  async function approve(id: string) {
-    await approveVisa(
-      id,
-      "TEMP-VISA",
-      new Date().toISOString(),
-      new Date(Date.now() + 31536000000).toISOString(),
-    );
+  function openApproveDialog(id: string) {
+    setApproveDialogVisaId(id);
+    setVisaNumber("");
+    setIssueDate("");
+    setExpiryDate("");
+    setApproveError(null);
+  }
 
-    load();
+  async function handleApprove() {
+    if (!approveDialogVisaId || !visaNumber || !issueDate || !expiryDate) return;
+
+    setApproving(true);
+    setApproveError(null);
+    try {
+      await approveVisa(approveDialogVisaId, {
+        visaNumber,
+        issueDate,
+        expiryDate,
+      });
+      setApproveDialogVisaId(null);
+      await load();
+    } catch (err) {
+      console.error("Failed to approve visa", err);
+      setApproveError(err instanceof Error ? err.message : "Couldn't approve the visa. Try again.");
+    } finally {
+      setApproving(false);
+    }
   }
 
   async function issue(id: string) {
@@ -198,10 +223,75 @@ export default function VisaCard({ applicationId }: Props) {
                     Submit
                   </Button>
 
-                  <Button size="sm" variant="secondary" onClick={() => approve(visa.id)}>
-                    <BadgeCheck className="mr-2 h-4 w-4" />
-                    Approve
-                  </Button>
+                  <Dialog
+                    open={approveDialogVisaId === visa.id}
+                    onOpenChange={(open) => {
+                      if (open) {
+                        openApproveDialog(visa.id);
+                      } else {
+                        setApproveDialogVisaId(null);
+                      }
+                    }}
+                  >
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="secondary">
+                        <BadgeCheck className="mr-2 h-4 w-4" />
+                        Approve
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Approve Visa</DialogTitle>
+                      </DialogHeader>
+
+                      <div className="space-y-4 py-2">
+                        <div>
+                          <Label htmlFor="visa_number">Visa Number</Label>
+                          <Input
+                            id="visa_number"
+                            placeholder="Visa number"
+                            value={visaNumber}
+                            onChange={(e) => setVisaNumber(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="issue_date">Issue Date</Label>
+                          <Input
+                            id="issue_date"
+                            type="date"
+                            value={issueDate}
+                            onChange={(e) => setIssueDate(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="expiry_date">Expiry Date</Label>
+                          <Input
+                            id="expiry_date"
+                            type="date"
+                            value={expiryDate}
+                            onChange={(e) => setExpiryDate(e.target.value)}
+                          />
+                        </div>
+
+                        {approveError && (
+                          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                            {approveError}
+                          </p>
+                        )}
+                      </div>
+
+                      <DialogFooter>
+                        <Button
+                          onClick={handleApprove}
+                          disabled={approving || !visaNumber || !issueDate || !expiryDate}
+                        >
+                          {approving ? "Approving..." : "Confirm"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
 
                   <Button size="sm" onClick={() => issue(visa.id)}>
                     Issue

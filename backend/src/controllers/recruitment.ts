@@ -319,7 +319,7 @@ export async function createVisa(req: Request, res: Response) {
 export async function approveVisa(req: Request, res: Response) {
   const data = await RecruitmentService.approveVisa(
     String(req.params.id),
-    ADMIN_ID,
+    req.adminId!,
     req.body.visaNumber,
     req.body.issueDate,
     req.body.expiryDate,

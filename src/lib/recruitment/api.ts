@@ -203,12 +203,18 @@ export const submitVisa = async (visaId: string) => {
   return data.data;
 };
 
-export const approveVisa = async (visaId: string) => {
-  const { data } = await api.patch(`/recruitment/visas/${visaId}/approve`);
+export const approveVisa = async (
+  visaId: string,
+  payload: {
+    visaNumber: string;
+    issueDate: string;
+    expiryDate: string;
+  },
+) => {
+  const { data } = await api.patch(`/recruitment/visas/${visaId}/approve`, payload);
 
   return data.data;
 };
-
 export const issueVisa = async (visaId: string, payload?: any) => {
   const { data } = await api.patch(`/recruitment/visas/${visaId}/issue`, payload);
 
