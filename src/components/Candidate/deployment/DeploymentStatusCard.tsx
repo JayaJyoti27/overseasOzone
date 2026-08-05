@@ -30,21 +30,19 @@ export default function DeploymentStatusCard() {
         <div className="flex items-center gap-2">
           <Plane className="h-5 w-5" />
 
-          {deployment.flight_number}
+          {deployment.flight_number ?? "-"}
         </div>
 
         <div className="flex items-center gap-2">
           <CalendarDays className="h-5 w-5" />
 
-          {deployment.departure_date
-            ? new Date(deployment.departure_date).toLocaleDateString()
-            : "-"}
+          {deployment.departure_time ? new Date(deployment.departure_time).toLocaleString() : "-"}
         </div>
 
         <div className="flex items-center gap-2">
           <MapPin className="h-5 w-5" />
 
-          {deployment.destination_country}
+          {deployment.arrival_airport ?? "-"}
         </div>
       </div>
     </Card>

@@ -66,7 +66,10 @@ export const APPLICATION_STATUS_FLOW: Record<ApplicationStatus, ApplicationStatu
 | recruiter/admin bookkeeping stages a candidate should never see.
 */
 
-export const INTERNAL_ONLY_STATUSES: ApplicationStatus[] = ["application_received", "cv_under_review"];
+export const INTERNAL_ONLY_STATUSES: ApplicationStatus[] = [
+  "application_received",
+  "cv_under_review",
+];
 
 export const CANDIDATE_VISIBLE_STATUSES: ApplicationStatus[] = APPLICATION_STATUSES.filter(
   (status) => !(INTERNAL_ONLY_STATUSES as string[]).includes(status),
@@ -74,29 +77,4 @@ export const CANDIDATE_VISIBLE_STATUSES: ApplicationStatus[] = APPLICATION_STATU
 
 export function isCandidateVisibleStatus(status: string): status is ApplicationStatus {
   return (CANDIDATE_VISIBLE_STATUSES as string[]).includes(status);
-}
-
-/*
-|--------------------------------------------------------------------------
-| Employer Visibility
-|--------------------------------------------------------------------------
-| The ball is only in the employer's court once admin has actually
-| reviewed the CV and shortlisted the candidate. Applications still at
-| "applied", "application_received", or "cv_under_review" are pre-review
-| and must stay hidden from the employer, even though the employer owns
-| the job order the application belongs to.
-*/
-
-export const EMPLOYER_HIDDEN_STATUSES: ApplicationStatus[] = [
-  "applied",
-  "application_received",
-  "cv_under_review",
-];
-
-export const EMPLOYER_VISIBLE_STATUSES: ApplicationStatus[] = APPLICATION_STATUSES.filter(
-  (status) => !(EMPLOYER_HIDDEN_STATUSES as string[]).includes(status),
-);
-
-export function isEmployerVisibleStatus(status: string): status is ApplicationStatus {
-  return (EMPLOYER_VISIBLE_STATUSES as string[]).includes(status);
 }

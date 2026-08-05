@@ -332,7 +332,7 @@ export async function getDeployments(req: Request, res: Response) {
 
     return res.json({
       success: true,
-      ...data,
+      data,
     });
   } catch (err: any) {
     return res.status(500).json({

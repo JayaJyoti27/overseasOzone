@@ -173,6 +173,7 @@ export async function addTicket(
     arrival_time: string;
     ticket_document_id?: string;
   },
+  changedBy?: string,
 ) {
   const { data, error } = await supabase
     .from("deployments")
@@ -189,6 +190,24 @@ export async function addTicket(
 
   if (error) {
     throw new DatabaseError("Unable to update ticket.", error);
+  }
+
+  // The deployments table has its own finer-grained sub-pipeline
+  // (pending -> ticket_booked -> travel_confirmed -> departed -> arrived
+  // -> deployed), but applications.internal_status — what employer and
+  // candidate actually read — only has one stage between "visa_approved"
+  // and "deployed": "ticket_confirmed". This is where that sync happens.
+  if (data?.application_id) {
+    await supabase
+      .from("applications")
+      .update({
+        internal_status: "ticket_confirmed",
+        last_status_change: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.application_id);
+
+    await recordStatusChange(data.application_id, "ticket_confirmed", { changedBy });
   }
 
   return data;

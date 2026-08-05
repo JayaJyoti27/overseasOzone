@@ -3,7 +3,7 @@ import { useState, FormEvent } from "react";
 import { ShieldCheck, ArrowRight, Lock, Mail } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/footer";
-import { loginWithPassword, roleHomePath } from "@/lib/supabase";
+import { loginWithPassword, roleHomePath, requestPasswordReset } from "@/lib/supabase";
 
 export const Route = createFileRoute("/Login")({
   head: () => ({
@@ -45,6 +45,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [forgotStatus, setForgotStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,6 +59,20 @@ function LoginPage() {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError("Enter your email above first, then tap \"Forgot password?\".");
+      return;
+    }
+    setForgotStatus("sending");
+    try {
+      await requestPasswordReset(email);
+      setForgotStatus("sent");
+    } catch {
+      setForgotStatus("error");
     }
   }
 
@@ -124,6 +139,27 @@ function LoginPage() {
                 />
               </div>
             </div>
+
+            <div className="mb-2 flex justify-end">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs font-semibold text-blue hover:underline"
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {forgotStatus === "sent" && (
+              <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                If an account exists for {email}, a reset link is on its way.
+              </p>
+            )}
+            {forgotStatus === "error" && (
+              <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                Couldn't send the reset email. Try again in a moment.
+              </p>
+            )}
 
             {error && (
               <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>

@@ -668,3 +668,158 @@ export async function closeRecruitment(req: Request, res: Response) {
     });
   }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Admin Users (User Management)
+|--------------------------------------------------------------------------
+*/
+
+export async function getAdminUsers(req: Request, res: Response) {
+  try {
+    const data = await AdminService.listAdminUsers();
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(500).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function inviteAdminUser(req: Request, res: Response) {
+  try {
+    const { email, fullName, adminRole } = req.body;
+
+    if (!email || !adminRole) {
+      return res.status(400).json({
+        success: false,
+        message: "email and adminRole are required.",
+      });
+    }
+
+    const data = await AdminService.inviteAdminUser({
+      email,
+      fullName,
+      adminRole,
+      invitedBy: req.adminId!,
+    });
+
+    return res.status(201).json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function updateAdminUserRole(req: Request, res: Response) {
+  try {
+    const { adminRole } = req.body;
+
+    if (!adminRole) {
+      return res.status(400).json({
+        success: false,
+        message: "adminRole is required.",
+      });
+    }
+
+    const data = await AdminService.updateAdminUserRole(String(req.params.id), adminRole);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function suspendAdminUser(req: Request, res: Response) {
+  try {
+    const data = await AdminService.suspendAdminUser(String(req.params.id), req.adminId!);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function activateAdminUser(req: Request, res: Response) {
+  try {
+    const data = await AdminService.activateAdminUser(String(req.params.id));
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function getMyAdminProfile(req: Request, res: Response) {
+  try {
+    const data = await AdminService.getOwnAdminProfile(req.adminId!);
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}
+
+export async function getAdminLoginHistory(req: Request, res: Response) {
+  try {
+    const data = await AdminService.listAdminLoginHistory(String(req.params.id));
+
+    return res.json({
+      success: true,
+
+      data,
+    });
+  } catch (err: any) {
+    return res.status(400).json({
+      success: false,
+
+      message: err.message,
+    });
+  }
+}

@@ -107,3 +107,26 @@ export async function sendEmployerLoginLink(email: string) {
   });
   if (error) throw new Error(error.message);
 }
+
+/**
+ * Sends a password-reset email. Works for any account (admin, employer,
+ * candidate) — Supabase doesn't require the caller to be logged in as that
+ * user, so this also powers the "Send reset link" button an admin can use
+ * on someone else's Admin Users row.
+ */
+export async function requestPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/ResetPassword`,
+  });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Sets a new password for the currently-authenticated session. Call this
+ * on the /ResetPassword page after the user lands there from the reset
+ * email link (Supabase turns that link into a real session automatically).
+ */
+export async function updatePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw new Error(error.message);
+}

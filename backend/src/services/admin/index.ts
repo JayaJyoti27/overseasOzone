@@ -6,3 +6,5 @@ export * from "./jobOrders";
 export * from "./legalizationDocuments";
 
 export * from "./recruitment";
+export * from "./adminUsers";
+export * from "./loginHistory";

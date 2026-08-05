@@ -180,3 +180,45 @@ export async function convertRequirement(id: string) {
   const res = await api.patch(`/admin/requirements/${id}/convert`);
   return res.data.data;
 }
+
+// Admin's own profile — used to know the logged-in admin's role for
+// sidebar filtering and page-level access checks.
+export async function getMyAdminProfile() {
+  const res = await api.get("/admin/me");
+  return res.data.data;
+}
+
+// Admin Users (User Management)
+export async function getAdminUsers() {
+  const res = await api.get("/admin/users");
+  return res.data.data;
+}
+
+export async function inviteAdminUser(payload: {
+  email: string;
+  fullName?: string;
+  adminRole: string;
+}) {
+  const res = await api.post("/admin/users/invite", payload);
+  return res.data.data;
+}
+
+export async function updateAdminUserRole(id: string, adminRole: string) {
+  const res = await api.patch(`/admin/users/${id}/role`, { adminRole });
+  return res.data.data;
+}
+
+export async function suspendAdminUser(id: string) {
+  const res = await api.patch(`/admin/users/${id}/suspend`);
+  return res.data.data;
+}
+
+export async function activateAdminUser(id: string) {
+  const res = await api.patch(`/admin/users/${id}/activate`);
+  return res.data.data;
+}
+
+export async function getAdminLoginHistory(id: string) {
+  const res = await api.get(`/admin/users/${id}/login-history`);
+  return res.data.data;
+}

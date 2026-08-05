@@ -1,6 +1,7 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
 import { CANDIDATE_VISIBLE_STATUSES } from "../../constants/applicationStatus";
+import { APPLICATION_STATUS_MESSAGES } from "../../constants/applicationStatusMessages";
 
 interface ApplicationFilters {
   page?: number;
@@ -105,7 +106,7 @@ export async function applyForJob(candidateId: string, jobId: string) {
 
   const { data: job, error: jobError } = await supabase
     .from("jobs")
-    .select("employer_id,job_order_id")
+    .select("employer_id, job_order_id, job_order:job_orders( title )")
     .eq("id", jobId)
     .single();
 
@@ -120,7 +121,7 @@ export async function applyForJob(candidateId: string, jobId: string) {
       job_id: jobId,
       employer_id: job.employer_id,
       job_order_id: job.job_order_id,
-      status: "application_received",
+      status: "applied",
       applied_at: new Date().toISOString(),
     })
     .select()
@@ -128,6 +129,27 @@ export async function applyForJob(candidateId: string, jobId: string) {
 
   if (error) {
     throw new DatabaseError("Unable to submit application.", error);
+  }
+
+  const jobOrder = Array.isArray(job.job_order) ? job.job_order[0] : job.job_order;
+  const appliedMessage = APPLICATION_STATUS_MESSAGES.applied;
+
+  if (appliedMessage.candidate) {
+    const { error: notifyError } = await supabase.from("notifications").insert({
+      user_id: candidateId,
+      title: appliedMessage.title,
+      message: appliedMessage.candidate.replace("{job}", jobOrder?.title ?? "the job"),
+      type: "application",
+      related_entity: "application",
+      related_entity_id: data.id,
+    });
+
+    if (notifyError) {
+      console.error(
+        `[notifications] Failed to send applied-notification for ${data.id}:`,
+        notifyError,
+      );
+    }
   }
 
   return data;

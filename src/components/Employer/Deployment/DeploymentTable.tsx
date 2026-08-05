@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Eye } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { getDeployments } from "@/lib/employer/api";
 
@@ -16,21 +17,25 @@ import {
   TableCell,
 } from "@/components/ui/table";
 
-type Deployment = {
+interface Deployment {
   id: string;
-  candidate_name?: string;
-  candidate?: string;
-  position?: string;
-  job_title?: string;
-  country?: string;
-  visa_status?: string;
-  visa?: string;
-  medical_status?: string;
-  medical?: string;
-  flight_date?: string;
-  flight?: string;
-  status?: string;
-};
+  status: string;
+  airline_name?: string | null;
+  flight_number?: string | null;
+  departure_time?: string | null;
+  arrival_time?: string | null;
+  application?: {
+    candidate?: { full_name?: string } | null;
+  } | null;
+  job?: { title?: string; country?: string } | null;
+}
+
+function formatStatus(status: string) {
+  return status
+    .split("_")
+    .map((w) => w[0]?.toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
 export function DeploymentTable() {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
@@ -39,9 +44,8 @@ export function DeploymentTable() {
   useEffect(() => {
     async function load() {
       try {
-        const data = await getDeployments();
-
-        setDeployments(Array.isArray(data) ? data : (data.data ?? []));
+        const result = await getDeployments();
+        setDeployments(result?.deployments ?? []);
       } catch (err) {
         console.error("Failed to load deployments", err);
       } finally {
@@ -77,8 +81,6 @@ export function DeploymentTable() {
               <TableHead>Candidate</TableHead>
               <TableHead>Position</TableHead>
               <TableHead>Country</TableHead>
-              <TableHead>Visa</TableHead>
-              <TableHead>Medical</TableHead>
               <TableHead>Flight</TableHead>
               <TableHead>Status</TableHead>
               <TableHead />
@@ -88,7 +90,7 @@ export function DeploymentTable() {
           <TableBody>
             {deployments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8">
                   No Deployments Found
                 </TableCell>
               </TableRow>
@@ -96,25 +98,26 @@ export function DeploymentTable() {
               deployments.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">
-                    {item.candidate_name ?? item.candidate ?? "-"}
+                    {item.application?.candidate?.full_name ?? "-"}
                   </TableCell>
 
-                  <TableCell>{item.position ?? item.job_title ?? "-"}</TableCell>
+                  <TableCell>{item.job?.title ?? "-"}</TableCell>
 
-                  <TableCell>{item.country ?? "-"}</TableCell>
+                  <TableCell>{item.job?.country ?? "-"}</TableCell>
 
-                  <TableCell>{item.visa_status ?? item.visa ?? "-"}</TableCell>
+                  <TableCell>{item.flight_number ?? "-"}</TableCell>
 
-                  <TableCell>{item.medical_status ?? item.medical ?? "-"}</TableCell>
-
-                  <TableCell>{item.flight_date ?? item.flight ?? "-"}</TableCell>
-
-                  <TableCell>{item.status ?? "-"}</TableCell>
+                  <TableCell>{formatStatus(item.status)}</TableCell>
 
                   <TableCell>
-                    <Button variant="outline" size="sm">
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
+                    <Button variant="outline" size="sm" asChild>
+                      <Link
+                        to="/Employer/deployment/$deploymentId"
+                        params={{ deploymentId: item.id }}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Link>
                     </Button>
                   </TableCell>
                 </TableRow>

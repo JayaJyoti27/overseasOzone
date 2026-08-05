@@ -354,7 +354,10 @@ export function useVisas() {
 export function useDeployments() {
   return useQuery({
     queryKey: candidateKeys.deployments,
-    queryFn: api.getDeployment,
+    queryFn: async () => {
+      const response = await api.getDeployment();
+      return response.data ?? [];
+    },
   });
 }
 /* ============================================================

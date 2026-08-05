@@ -15,6 +15,7 @@ import { Route as EmployerRouteImport } from './routes/employer'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CandidateRouteImport } from './routes/candidate'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as ResetPasswordRouteImport } from './routes/ResetPassword'
 import { Route as LoginRouteImport } from './routes/Login'
 import { Route as HomeRouteImport } from './routes/Home'
 import { Route as ForCandidatesRouteImport } from './routes/For-Candidates'
@@ -63,6 +64,7 @@ import { Route as CandidatesDashboardRouteImport } from './routes/Candidates/das
 import { Route as CandidatesApplicationsRouteImport } from './routes/Candidates/applications'
 import { Route as AdminDashboardRouteImport } from './routes/Admin/dashboard'
 import { Route as EmployerJobOrdersIndexRouteImport } from './routes/Employer/job-orders.index'
+import { Route as AdminUsersIndexRouteImport } from './routes/Admin/users/index'
 import { Route as AdminSettingsIndexRouteImport } from './routes/Admin/settings/index'
 import { Route as AdminRequirementsIndexRouteImport } from './routes/Admin/requirements/index'
 import { Route as AdminReportsIndexRouteImport } from './routes/Admin/reports/index'
@@ -112,6 +114,11 @@ const CandidateRoute = CandidateRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/ResetPassword',
+  path: '/ResetPassword',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -355,6 +362,11 @@ const EmployerJobOrdersIndexRoute = EmployerJobOrdersIndexRouteImport.update({
   path: '/',
   getParentRoute: () => EmployerJobOrdersRoute,
 } as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
@@ -468,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/For-Candidates': typeof ForCandidatesRoute
   '/Home': typeof HomeRoute
   '/Login': typeof LoginRoute
+  '/ResetPassword': typeof ResetPasswordRoute
   '/about': typeof AboutRoute
   '/candidate': typeof CandidateRoute
   '/contact': typeof ContactRoute
@@ -534,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/Admin/reports/': typeof AdminReportsIndexRoute
   '/Admin/requirements/': typeof AdminRequirementsIndexRoute
   '/Admin/settings/': typeof AdminSettingsIndexRoute
+  '/Admin/users/': typeof AdminUsersIndexRoute
   '/Employer/job-orders/': typeof EmployerJobOrdersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -544,6 +558,7 @@ export interface FileRoutesByTo {
   '/For-Candidates': typeof ForCandidatesRoute
   '/Home': typeof HomeRoute
   '/Login': typeof LoginRoute
+  '/ResetPassword': typeof ResetPasswordRoute
   '/about': typeof AboutRoute
   '/candidate': typeof CandidateRoute
   '/contact': typeof ContactRoute
@@ -609,6 +624,7 @@ export interface FileRoutesByTo {
   '/Admin/reports': typeof AdminReportsIndexRoute
   '/Admin/requirements': typeof AdminRequirementsIndexRoute
   '/Admin/settings': typeof AdminSettingsIndexRoute
+  '/Admin/users': typeof AdminUsersIndexRoute
   '/Employer/job-orders': typeof EmployerJobOrdersIndexRoute
 }
 export interface FileRoutesById {
@@ -620,6 +636,7 @@ export interface FileRoutesById {
   '/For-Candidates': typeof ForCandidatesRoute
   '/Home': typeof HomeRoute
   '/Login': typeof LoginRoute
+  '/ResetPassword': typeof ResetPasswordRoute
   '/about': typeof AboutRoute
   '/candidate': typeof CandidateRoute
   '/contact': typeof ContactRoute
@@ -686,6 +703,7 @@ export interface FileRoutesById {
   '/Admin/reports/': typeof AdminReportsIndexRoute
   '/Admin/requirements/': typeof AdminRequirementsIndexRoute
   '/Admin/settings/': typeof AdminSettingsIndexRoute
+  '/Admin/users/': typeof AdminUsersIndexRoute
   '/Employer/job-orders/': typeof EmployerJobOrdersIndexRoute
 }
 export interface FileRouteTypes {
@@ -698,6 +716,7 @@ export interface FileRouteTypes {
     | '/For-Candidates'
     | '/Home'
     | '/Login'
+    | '/ResetPassword'
     | '/about'
     | '/candidate'
     | '/contact'
@@ -764,6 +783,7 @@ export interface FileRouteTypes {
     | '/Admin/reports/'
     | '/Admin/requirements/'
     | '/Admin/settings/'
+    | '/Admin/users/'
     | '/Employer/job-orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -774,6 +794,7 @@ export interface FileRouteTypes {
     | '/For-Candidates'
     | '/Home'
     | '/Login'
+    | '/ResetPassword'
     | '/about'
     | '/candidate'
     | '/contact'
@@ -839,6 +860,7 @@ export interface FileRouteTypes {
     | '/Admin/reports'
     | '/Admin/requirements'
     | '/Admin/settings'
+    | '/Admin/users'
     | '/Employer/job-orders'
   id:
     | '__root__'
@@ -849,6 +871,7 @@ export interface FileRouteTypes {
     | '/For-Candidates'
     | '/Home'
     | '/Login'
+    | '/ResetPassword'
     | '/about'
     | '/candidate'
     | '/contact'
@@ -915,6 +938,7 @@ export interface FileRouteTypes {
     | '/Admin/reports/'
     | '/Admin/requirements/'
     | '/Admin/settings/'
+    | '/Admin/users/'
     | '/Employer/job-orders/'
   fileRoutesById: FileRoutesById
 }
@@ -926,6 +950,7 @@ export interface RootRouteChildren {
   ForCandidatesRoute: typeof ForCandidatesRoute
   HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   AboutRoute: typeof AboutRoute
   CandidateRoute: typeof CandidateRoute
   ContactRoute: typeof ContactRoute
@@ -994,6 +1019,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ResetPassword': {
+      id: '/ResetPassword'
+      path: '/ResetPassword'
+      fullPath: '/ResetPassword'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/Login': {
@@ -1332,6 +1364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployerJobOrdersIndexRouteImport
       parentRoute: typeof EmployerJobOrdersRoute
     }
+    '/Admin/users/': {
+      id: '/Admin/users/'
+      path: '/users'
+      fullPath: '/Admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/Admin/settings/': {
       id: '/Admin/settings/'
       path: '/settings'
@@ -1626,6 +1665,7 @@ interface AdminRouteChildren {
   AdminReportsIndexRoute: typeof AdminReportsIndexRoute
   AdminRequirementsIndexRoute: typeof AdminRequirementsIndexRoute
   AdminSettingsIndexRoute: typeof AdminSettingsIndexRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1643,6 +1683,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsIndexRoute: AdminReportsIndexRoute,
   AdminRequirementsIndexRoute: AdminRequirementsIndexRoute,
   AdminSettingsIndexRoute: AdminSettingsIndexRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1655,6 +1696,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForCandidatesRoute: ForCandidatesRoute,
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   AboutRoute: AboutRoute,
   CandidateRoute: CandidateRoute,
   ContactRoute: ContactRoute,
