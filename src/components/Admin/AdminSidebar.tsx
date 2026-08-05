@@ -12,9 +12,14 @@ import {
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useAdminProfile } from "./AdminProfileContext";
-import { sectionsForRole, ROLE_LABELS, type AdminSection } from "@/lib/admin/permissions";
+import { ROLE_LABELS, type AdminSection } from "@/lib/admin/permissions";
 
-const items: { title: string; href: string; icon: typeof LayoutDashboard; section: AdminSection }[] = [
+const items: {
+  title: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  section: AdminSection;
+}[] = [
   {
     title: "Dashboard",
     href: "/Admin/dashboard",
@@ -76,8 +81,13 @@ export default function AdminSidebar() {
     select: (s) => s.location.pathname,
   });
   const { profile } = useAdminProfile();
-  const allowedSections = sectionsForRole(profile?.admin_role);
-  const visibleItems = items.filter((item) => allowedSections.includes(item.section));
+  // Every link is shown to every admin role. Whether someone actually gets
+  // in when they click one is enforced by RequirePermission (page content)
+  // and requirePermission() on the backend (API calls) — not here. This
+  // keeps the sidebar simple and immune to profile-loading timing issues;
+  // an unauthorized click just lands on "Access restricted" instead of the
+  // link being hidden.
+  const visibleItems = items;
 
   return (
     <aside className="flex w-72 flex-col border-r border-border bg-white">

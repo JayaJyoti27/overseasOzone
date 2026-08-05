@@ -43,9 +43,9 @@ export async function inviteAdminUser(params: {
     throw new BadRequestError(`adminRole must be one of: ${ADMIN_ROLES.join(", ")}`);
   }
 
-  const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-    email,
-  );
+  const { data: invited, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${process.env.FRONTEND_URL}/ResetPassword`,
+  });
 
   if (inviteError || !invited?.user) {
     throw new DatabaseError("Unable to send invite email.", inviteError);
@@ -67,7 +67,10 @@ export async function inviteAdminUser(params: {
     .single();
 
   if (profileError) {
-    throw new DatabaseError("Invite email sent, but the admin profile failed to save.", profileError);
+    throw new DatabaseError(
+      "Invite email sent, but the admin profile failed to save.",
+      profileError,
+    );
   }
 
   return profile;

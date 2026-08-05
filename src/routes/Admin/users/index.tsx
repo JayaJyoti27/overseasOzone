@@ -246,6 +246,7 @@ function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<any[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -253,9 +254,12 @@ function AdminUsersPage() {
 
   async function load() {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await getAdminUsers();
       setUsers(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setLoadError(err?.response?.data?.message || "Couldn't load admin users. Try refreshing.");
     } finally {
       setLoading(false);
     }
@@ -311,9 +315,7 @@ function AdminUsersPage() {
             <UserCog className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="font-display text-xl font-bold tracking-tight text-navy">
-              Admin Users
-            </h1>
+            <h1 className="font-display text-xl font-bold tracking-tight text-navy">Admin Users</h1>
             <p className="text-sm text-ink/80">
               Staff accounts with access to this admin panel, and what each role can see.
             </p>
@@ -347,7 +349,17 @@ function AdminUsersPage() {
           </span>
         </div>
 
-        {filtered.length === 0 ? (
+        {loadError ? (
+          <div className="flex flex-col items-center justify-center gap-2.5 px-6 py-16 text-center">
+            <span className="grid h-11 w-11 place-items-center rounded-full bg-red-50 text-red-500">
+              <Inbox size={20} />
+            </span>
+            <p className="text-sm text-red-600">{loadError}</p>
+            <button onClick={load} className="text-xs font-semibold text-blue underline">
+              Try again
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2.5 px-6 py-16 text-center">
             <span className="grid h-11 w-11 place-items-center rounded-full bg-blue-wash text-blue">
               <Inbox size={20} />
@@ -398,10 +410,7 @@ function AdminUsersPage() {
                 </span>
 
                 <div className="flex flex-wrap items-center justify-end gap-2">
-                  <LoginHistoryDialog
-                    userId={u.id}
-                    userLabel={u.full_name || u.email || "Admin"}
-                  />
+                  <LoginHistoryDialog userId={u.id} userLabel={u.full_name || u.email || "Admin"} />
                   <Button
                     size="sm"
                     variant="outline"
@@ -416,9 +425,7 @@ function AdminUsersPage() {
                       size="sm"
                       variant={u.status === "suspended" ? "secondary" : "destructive"}
                       className={`h-8 rounded-full px-3.5 text-xs font-medium shadow-none ${
-                        u.status === "suspended"
-                          ? "bg-blue-wash text-blue hover:bg-blue-soft"
-                          : ""
+                        u.status === "suspended" ? "bg-blue-wash text-blue hover:bg-blue-soft" : ""
                       }`}
                       onClick={() => toggleSuspend(u.id, u.status)}
                     >

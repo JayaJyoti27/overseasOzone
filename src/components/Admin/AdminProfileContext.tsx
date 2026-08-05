@@ -13,16 +13,19 @@ interface AdminProfile {
 interface AdminProfileContextValue {
   profile: AdminProfile | null;
   loading: boolean;
+  error: string | null;
 }
 
 const AdminProfileContext = createContext<AdminProfileContextValue>({
   profile: null,
   loading: true,
+  error: null,
 });
 
 export function AdminProfileProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,10 +34,14 @@ export function AdminProfileProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (!cancelled) setProfile(data);
       })
-      .catch(() => {
-        // If this fails, treat it as "no restrictions" rather than locking
-        // the page — the backend still enforces the real permission checks.
-        if (!cancelled) setProfile(null);
+      .catch((err: any) => {
+        // Keep no restrictions applied on the frontend when this fails —
+        // the backend still enforces the real permission checks — but now
+        // surface *why* it failed instead of silently hiding it.
+        if (!cancelled) {
+          setProfile(null);
+          setError(err?.response?.data?.message || "Couldn't load your admin profile.");
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -46,7 +53,7 @@ export function AdminProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AdminProfileContext.Provider value={{ profile, loading }}>
+    <AdminProfileContext.Provider value={{ profile, loading, error }}>
       {children}
     </AdminProfileContext.Provider>
   );

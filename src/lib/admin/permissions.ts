@@ -30,7 +30,14 @@ export const ALL_SECTIONS: AdminSection[] = [
 ];
 
 const ADMIN_ROLE_PERMISSIONS: Record<Exclude<AdminRole, "super_admin">, AdminSection[]> = {
-  recruiter: ["dashboard", "employers", "requirements", "job-orders", "candidates", "notifications"],
+  recruiter: [
+    "dashboard",
+    "employers",
+    "requirements",
+    "job-orders",
+    "candidates",
+    "notifications",
+  ],
   viewer: [
     "dashboard",
     "employers",
@@ -43,7 +50,8 @@ const ADMIN_ROLE_PERMISSIONS: Record<Exclude<AdminRole, "super_admin">, AdminSec
 };
 
 export function sectionsForRole(role?: AdminRole | null): AdminSection[] {
-  if (role === "super_admin" || !role) return ALL_SECTIONS;
+  if (role === "super_admin") return ALL_SECTIONS;
+  if (!role) return [];
   return ADMIN_ROLE_PERMISSIONS[role] ?? [];
 }
 
