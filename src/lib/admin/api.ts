@@ -28,6 +28,39 @@ export async function getDashboard() {
   return res.data.data;
 }
 
+// Reports
+export async function getReportsOverview() {
+  const res = await api.get("/admin/reports/dashboard");
+  return res.data.data;
+}
+
+export async function getCandidateReport() {
+  const res = await api.get("/admin/reports/candidates");
+  return res.data.data;
+}
+
+export async function getEmployerReport() {
+  const res = await api.get("/admin/reports/employers");
+  return res.data.data;
+}
+
+export async function getRecruitmentReport() {
+  const res = await api.get("/admin/reports/recruitment");
+  return res.data.data;
+}
+
+export async function downloadCandidateReportCsv() {
+  const res = await api.get("/admin/reports/candidates/export", { responseType: "blob" });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "candidate-report.csv");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 // Candidates
 export async function getCandidates(params?: Record<string, any>) {
   const res = await api.get("/admin/candidates", { params });

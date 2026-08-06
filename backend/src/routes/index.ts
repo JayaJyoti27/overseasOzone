@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { verifyAuth } from "../middleware/verifyAuth";
+import { verifyAuth, requireRole, requirePermission } from "../middleware/verifyAuth";
 import adminRoutes from "./admin";
 import authRoutes from "./auth";
 import candidateRoutes from "./candidates";
@@ -80,6 +80,12 @@ router.use("/offers", offerRoutes);
 
 router.use("/notifications", verifyAuth, notificationRoutes);
 
-router.use("/admin/reports", reportsRoutes);
+router.use(
+  "/admin/reports",
+  verifyAuth,
+  requireRole("admin"),
+  requirePermission("reports"),
+  reportsRoutes,
+);
 router.use("/auth", authRoutes);
 export default router;

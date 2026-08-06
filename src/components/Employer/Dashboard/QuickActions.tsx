@@ -1,26 +1,35 @@
-import { Button } from "@/components/ui/button";
+import { Link } from "@tanstack/react-router";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { Plus, Building2, CalendarDays, FileText } from "lucide-react";
+import { Plus, Briefcase, Users, Building2 } from "lucide-react";
 
 const actions = [
   {
     title: "Create Job Order",
+    description: "Submit a new recruitment requirement",
     icon: Plus,
+    to: "/Employer/job-orders/new",
   },
   {
-    title: "Update Company",
+    title: "View Job Orders",
+    description: "Track status across all requirements",
+    icon: Briefcase,
+    to: "/Employer/job-orders",
+  },
+  {
+    title: "View Candidates",
+    description: "Review applicants and shortlist",
+    icon: Users,
+    to: "/Employer/candidates",
+  },
+  {
+    title: "Company Profile",
+    description: "Update details and documents",
     icon: Building2,
+    to: "/Employer/company",
   },
-  {
-    title: "Schedule Interview",
-    icon: CalendarDays,
-  },
-  {
-    title: "Upload Documents",
-    icon: FileText,
-  },
-];
+] as const;
 
 export function QuickActions() {
   return (
@@ -34,11 +43,22 @@ export function QuickActions() {
           const Icon = action.icon;
 
           return (
-            <Button key={action.title} variant="outline" className="justify-start gap-3 h-12">
-              <Icon className="h-5 w-5" />
+            <Link
+              key={action.title}
+              to={action.to}
+              className="group flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm font-medium transition hover:border-blue hover:bg-blue-wash/60"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-blue-wash text-blue transition group-hover:bg-navy group-hover:text-white">
+                <Icon className="h-4 w-4" />
+              </span>
 
-              {action.title}
-            </Button>
+              <span className="flex flex-col">
+                <span>{action.title}</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {action.description}
+                </span>
+              </span>
+            </Link>
           );
         })}
       </CardContent>

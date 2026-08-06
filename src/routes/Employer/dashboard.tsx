@@ -1,20 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import {
-  Briefcase,
-  Users,
-  UserCheck,
-  CalendarDays,
-  Plane,
-  AlertCircle,
-  Sparkles,
-} from "lucide-react";
+import { Briefcase, Users, UserCheck, CalendarDays, Plane, AlertCircle, Sparkles } from "lucide-react";
 
 import { StatCard } from "@/components/Employer/Dashboard/StatCard";
-import { RecruitmentPipeline } from "@/components/Employer/Dashboard/RecruitmentPipeline";
 import { QuickActions } from "@/components/Employer/Dashboard/QuickActions";
+import { RecentJobOrders } from "@/components/Employer/Dashboard/RecentJobOrders";
+import { UpcomingInterviews } from "@/components/Employer/Dashboard/UpcomingInterviews";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 import { getDashboard } from "@/lib/employer/api";
@@ -22,14 +14,6 @@ import { getDashboard } from "@/lib/employer/api";
 export const Route = createFileRoute("/Employer/dashboard")({
   component: EmployerDashboard,
 });
-
-const STAT_CONFIG = {
-  activeJobOrders: { title: "Active Job Orders", icon: Briefcase, color: "blue" },
-  totalCandidates: { title: "Candidates", icon: Users, color: "green" },
-  candidatesShortlisted: { title: "Shortlisted", icon: UserCheck, color: "amber" },
-  upcomingInterviews: { title: "Interviews", icon: CalendarDays, color: "amber" },
-  deployments: { title: "Deployments", icon: Plane, color: "purple" },
-} as const;
 
 function EmployerDashboard() {
   const [dashboard, setDashboard] = useState<any>(null);
@@ -45,7 +29,6 @@ function EmployerDashboard() {
       setLoading(true);
       setError(null);
       const data = await getDashboard();
-      console.log("DASHBOARD API RESPONSE:", JSON.stringify(data, null, 2));
       setDashboard(data);
     } catch (err) {
       console.error("Failed to load employer dashboard:", err);
@@ -55,25 +38,25 @@ function EmployerDashboard() {
     }
   }
 
+  const stats = dashboard?.dashboard;
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Employer Dashboard</h1>
+          <h1 className="text-3xl font-bold">
+            {dashboard?.employer?.company_name ? `Welcome back, ${dashboard.employer.company_name}` : "Employer Dashboard"}
+          </h1>
 
           <p className="text-muted-foreground">
-            Welcome back. Here's an overview of your recruitment activities.
+            Here's an overview of your recruitment activity.
           </p>
-
-          {dashboard?.employer && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              Logged in as {dashboard.employer.company_name}
-            </p>
-          )}
         </div>
 
-        <Button>Create Job Order</Button>
+        <Button asChild>
+          <Link to="/Employer/job-orders/new">Create Job Order</Link>
+        </Button>
       </div>
 
       {!loading && !error && dashboard?.employer && !dashboard.employer.industry && (
@@ -91,7 +74,13 @@ function EmployerDashboard() {
         </div>
       )}
 
-      {loading && <p>Loading dashboard...</p>}
+      {loading && (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-[104px] animate-pulse rounded-xl border bg-muted/40" />
+          ))}
+        </div>
+      )}
 
       {error && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-red-200 bg-red-50 p-8">
@@ -103,52 +92,79 @@ function EmployerDashboard() {
 
       {!loading && !error && (
         <>
-          {/* KPI Cards */}
+          {/* KPI Cards - each links to the page that explains the number */}
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <StatCard
-              title={STAT_CONFIG.activeJobOrders.title}
-              value={dashboard?.dashboard?.activeJobOrders ?? 0}
-              icon={STAT_CONFIG.activeJobOrders.icon}
-              color={STAT_CONFIG.activeJobOrders.color}
+              title="Active Job Orders"
+              value={stats?.activeJobOrders ?? 0}
+              icon={Briefcase}
+              color="blue"
+              href="/Employer/job-orders"
             />
 
             <StatCard
-              title={STAT_CONFIG.totalCandidates.title}
-              value={dashboard?.dashboard?.totalCandidates ?? 0}
-              icon={STAT_CONFIG.totalCandidates.icon}
-              color={STAT_CONFIG.totalCandidates.color}
+              title="Candidates"
+              value={stats?.totalCandidates ?? 0}
+              icon={Users}
+              color="green"
+              href="/Employer/candidates"
             />
 
             <StatCard
-              title={STAT_CONFIG.candidatesShortlisted.title}
-              value={dashboard?.dashboard?.candidatesShortlisted ?? 0}
-              icon={STAT_CONFIG.candidatesShortlisted.icon}
-              color={STAT_CONFIG.candidatesShortlisted.color}
+              title="Shortlisted"
+              value={stats?.candidatesShortlisted ?? 0}
+              icon={UserCheck}
+              color="amber"
+              href="/Employer/candidates"
             />
 
             <StatCard
-              title={STAT_CONFIG.upcomingInterviews.title}
-              value={dashboard?.dashboard?.interviewsScheduled ?? 0}
-              icon={STAT_CONFIG.upcomingInterviews.icon}
-              color={STAT_CONFIG.upcomingInterviews.color}
+              title="Interviews"
+              value={stats?.interviewsScheduled ?? 0}
+              icon={CalendarDays}
+              color="amber"
+              href="/Employer/interviews"
             />
 
             <StatCard
-              title={STAT_CONFIG.deployments.title}
-              value={dashboard?.dashboard?.candidatesDeployed ?? 0}
-              icon={STAT_CONFIG.deployments.icon}
-              color={STAT_CONFIG.deployments.color}
+              title="Deployments"
+              value={stats?.candidatesDeployed ?? 0}
+              icon={Plane}
+              color="purple"
+              href="/Employer/deployment"
             />
           </section>
+
+          {stats && (stats.jobOrdersUnderReview > 0 || stats.legalizationInProgress > 0) && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-100 bg-blue-wash/60 px-4 py-3 text-sm text-navy">
+              <AlertCircle className="h-4 w-4 shrink-0 text-blue" />
+              {stats.jobOrdersUnderReview > 0 && (
+                <span>
+                  {stats.jobOrdersUnderReview} job order{stats.jobOrdersUnderReview > 1 ? "s" : ""}{" "}
+                  awaiting admin review.
+                </span>
+              )}
+              {stats.legalizationInProgress > 0 && (
+                <span>
+                  {stats.legalizationInProgress} in legalization — action may be needed on your
+                  side.
+                </span>
+              )}
+              <Link to="/Employer/job-orders" className="ml-auto font-medium text-blue hover:underline">
+                Review now
+              </Link>
+            </div>
+          )}
 
           {/* Bottom Section */}
           <section className="grid gap-6 xl:grid-cols-12">
             <div className="xl:col-span-7">
-              <RecruitmentPipeline dashboard={dashboard?.dashboard} />
+              <RecentJobOrders />
             </div>
 
             <div className="space-y-6 xl:col-span-5">
               <QuickActions />
+              <UpcomingInterviews interviews={dashboard?.upcomingInterviews ?? []} />
             </div>
           </section>
         </>

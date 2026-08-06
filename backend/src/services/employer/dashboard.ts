@@ -74,12 +74,14 @@ export async function getEmployerDashboard(employerId: string) {
       .eq("status", "recruitment_open")
       .eq("is_deleted", false),
 
-    // FIX: interviews has no employer_id column — join through job_orders instead
+    // FIX: interviews has no employer_id column — join through job_orders instead.
+    // Only count interviews that are genuinely still upcoming (not done/cancelled).
     supabase
       .from("interviews")
       .select("*, job_orders!inner(employer_id)", { head: true, count: "exact" })
       .eq("job_orders.employer_id", employerId)
-      .gte("interview_date", new Date().toISOString()),
+      .gte("interview_date", new Date().toISOString())
+      .not("status", "in", "(completed,cancelled,no_show)"),
 
     supabase
       .from("applications")
@@ -142,6 +144,7 @@ export async function getEmployerDashboard(employerId: string) {
         id,
         interview_date,
         mode,
+        status,
         job_orders!inner(employer_id, title),
         application:applications(
           id,
@@ -153,6 +156,9 @@ export async function getEmployerDashboard(employerId: string) {
       `,
     )
     .eq("job_orders.employer_id", employerId)
+    // Only interviews still ahead of us, and not already wrapped up/called off.
+    .gte("interview_date", new Date().toISOString())
+    .not("status", "in", "(completed,cancelled,no_show)")
     .order("interview_date")
     .limit(5);
 

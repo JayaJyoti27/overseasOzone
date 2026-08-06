@@ -18,7 +18,13 @@ export async function getCandidateSummary() {
       .select("*", { count: "exact", head: true })
       .eq("status", "inactive"),
 
-    supabase.from("candidates").select("*", { count: "exact", head: true }).eq("is_verified", true),
+    // "verified" is a value of `status` here, not a separate boolean column —
+    // there is no is_verified column on candidates. TODO: confirm this is the
+    // right status value once the real status list is confirmed.
+    supabase
+      .from("candidates")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "verified"),
   ]);
 
   if (total.error || active.error || inactive.error || verified.error) {
@@ -42,7 +48,7 @@ export async function getCandidateSummary() {
 */
 
 export async function getCandidatesByCountry() {
-  const { data, error } = await supabase.from("candidates").select("country");
+  const { data, error } = await supabase.from("candidates").select("preferred_country");
 
   if (error) {
     throw new DatabaseError("Unable to fetch candidates by country.", error);
@@ -51,7 +57,7 @@ export async function getCandidatesByCountry() {
   const countries: Record<string, number> = {};
 
   for (const row of data ?? []) {
-    const country = row.country || "Unknown";
+    const country = row.preferred_country || "Unknown";
 
     countries[country] = (countries[country] ?? 0) + 1;
   }
@@ -65,21 +71,13 @@ export async function getCandidatesByCountry() {
 */
 
 export async function getCandidatesByProfession() {
-  const { data, error } = await supabase.from("candidates").select("profession");
-
-  if (error) {
-    throw new DatabaseError("Unable to fetch professions.", error);
-  }
-
-  const professions: Record<string, number> = {};
-
-  for (const row of data ?? []) {
-    const profession = row.profession || "Unknown";
-
-    professions[profession] = (professions[profession] ?? 0) + 1;
-  }
-
-  return professions;
+  // `profession` is not a real column on candidates — verified against every
+  // other candidate query in the codebase, it doesn't exist anywhere. The
+  // closest real fields are `skills` (array) and `experience` (structured),
+  // neither of which is a single "profession" string. Returning empty here
+  // instead of throwing so this doesn't take down the whole report while a
+  // real backing field gets decided on.
+  return {} as Record<string, number>;
 }
 /*
 |--------------------------------------------------------------------------

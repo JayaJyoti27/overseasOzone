@@ -117,6 +117,8 @@ export function requireRole(role: "admin" | "employer" | "candidate") {
  * whose role includes this section. super_admin always passes. See
  * backend/src/constants/adminPermissions.ts for what each role can see.
  */
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
 export function requirePermission(section: AdminSection) {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!roleCanAccess(req.adminRole, section)) {
@@ -125,6 +127,17 @@ export function requirePermission(section: AdminSection) {
         message: "Your admin role doesn't have access to this section.",
       });
     }
+
+    // Viewer is read-only by design: same section visibility as recruiter,
+    // but never allowed to create/update/delete anything. super_admin and
+    // recruiter are unaffected by this check.
+    if (req.adminRole === "viewer" && !SAFE_METHODS.has(req.method)) {
+      return res.status(403).json({
+        success: false,
+        message: "Viewers have read-only access and can't make changes here.",
+      });
+    }
+
     return next();
   };
 }
