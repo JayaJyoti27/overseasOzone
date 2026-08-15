@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { sendEmail } from "../email";
 
 /*
 |--------------------------------------------------------------------------
@@ -161,20 +162,38 @@ export async function submitEmployerForReview(employerId: string) {
     throw new NotFoundError("Employer not found.");
   }
 
-  const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+  const { data: admins } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .eq("role", "admin");
 
   const companyName = employer.company_name || "A new employer";
+  const title = "New employer awaiting approval";
+  const message = `${companyName} has submitted their registration and documents for review.`;
 
+  // Sequential, not Promise.all — Resend's free tier is rate-limited
+  // (2 req/sec), and admin lists can grow, so a raw fan-out risks
+  // throttling on bulk sends like this one.
   for (const admin of admins ?? []) {
     await supabase.from("notifications").insert({
       user_id: admin.id,
-      title: "New employer awaiting approval",
-      message: `${companyName} has submitted their registration and documents for review.`,
+      title,
+      message,
       type: "employer_registration",
       related_entity: "employer",
       related_entity_id: employerId,
       is_read: false,
     });
+
+    if (admin.email) {
+      await sendEmail({
+        to: admin.email,
+        subject: title,
+        message,
+        ctaLabel: "Review Employer",
+        ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Admin/employers/${employerId}`,
+      });
+    }
   }
 
   return { notified: admins?.length ?? 0 };

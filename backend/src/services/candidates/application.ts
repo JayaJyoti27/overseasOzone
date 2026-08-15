@@ -2,6 +2,7 @@ import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
 import { CANDIDATE_VISIBLE_STATUSES } from "../../constants/applicationStatus";
 import { APPLICATION_STATUS_MESSAGES } from "../../constants/applicationStatusMessages";
+import { sendEmail } from "../email";
 
 interface ApplicationFilters {
   page?: number;
@@ -149,6 +150,22 @@ export async function applyForJob(candidateId: string, jobId: string) {
         `[notifications] Failed to send applied-notification for ${data.id}:`,
         notifyError,
       );
+    }
+
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("email")
+      .eq("id", candidateId)
+      .maybeSingle();
+
+    if (candidate?.email) {
+      await sendEmail({
+        to: candidate.email,
+        subject: appliedMessage.title,
+        message: appliedMessage.candidate.replace("{job}", jobOrder?.title ?? "the job"),
+        ctaLabel: "View Application",
+        ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Candidates/applications/${data.id}`,
+      });
     }
   }
 

@@ -1,6 +1,7 @@
 import { supabase } from "../../../config/supabase";
 import { isCandidateVisibleStatus, ApplicationStatus } from "../../../constants/applicationStatus";
 import { APPLICATION_STATUS_MESSAGES } from "../../../constants/applicationStatusMessages";
+import { sendEmail } from "../../email";
 
 /*
 |--------------------------------------------------------------------------
@@ -82,7 +83,8 @@ export async function recordStatusChange(
         `
         candidate_id,
         employer_id,
-        candidate:candidates( name ),
+        candidate:candidates( name, email ),
+        employer:employers( email ),
         job_order:job_orders( title )
       `,
       )
@@ -95,9 +97,14 @@ export async function recordStatusChange(
         fetchError,
       );
     } else {
-      const candidateName =
-        (Array.isArray(application.candidate) ? application.candidate[0] : application.candidate)
-          ?.name ?? "The candidate";
+      const candidateRecord = Array.isArray(application.candidate)
+        ? application.candidate[0]
+        : application.candidate;
+      const employerRecord = Array.isArray(application.employer)
+        ? application.employer[0]
+        : application.employer;
+
+      const candidateName = candidateRecord?.name ?? "The candidate";
       const jobTitle =
         (Array.isArray(application.job_order) ? application.job_order[0] : application.job_order)
           ?.title ?? "the job";
@@ -126,6 +133,28 @@ export async function recordStatusChange(
           type: "application",
           related_entity: "application",
           related_entity_id: applicationId,
+        });
+      }
+
+      // Email, alongside the portal notification rows above — same
+      // best-effort spirit, never blocks/rolls back the status update.
+      if (messages.candidate && candidateRecord?.email) {
+        await sendEmail({
+          to: candidateRecord.email,
+          subject: messages.title,
+          message: fill(messages.candidate),
+          ctaLabel: "View Application",
+          ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Candidates/applications/${applicationId}`,
+        });
+      }
+
+      if (messages.employer && employerRecord?.email) {
+        await sendEmail({
+          to: employerRecord.email,
+          subject: messages.title,
+          message: fill(messages.employer),
+          ctaLabel: "View Candidate",
+          ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Employer/candidates/${application.candidate_id}`,
         });
       }
 

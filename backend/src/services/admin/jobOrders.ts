@@ -1,6 +1,7 @@
 import { supabase } from "../../config/supabase";
 import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
 import { initializeLegalizationChecklist, isLegalizationComplete } from "./legalizationDocuments";
+import { sendEmail } from "../email";
 
 interface JobOrderFilters {
   page?: number;
@@ -411,12 +412,15 @@ export async function startLegalization(jobOrderId: string, adminId: string) {
   await initializeLegalizationChecklist(jobOrderId);
 
   if (result.employer_id) {
+    const legalizationTitle = "Documents needed for legalization";
+    const legalizationMessage = `Please upload the Demand Letter, Specimen Employment Contract, and Power of Attorney for "${result.title ?? "your job order"}" so we can proceed with legalization.`;
+
     await supabase.from("notifications").insert({
       user_id: result.employer_id,
 
-      title: "Documents needed for legalization",
+      title: legalizationTitle,
 
-      message: `Please upload the Demand Letter, Specimen Employment Contract, and Power of Attorney for "${result.title ?? "your job order"}" so we can proceed with legalization.`,
+      message: legalizationMessage,
 
       type: "legalization",
 
@@ -424,6 +428,22 @@ export async function startLegalization(jobOrderId: string, adminId: string) {
 
       related_entity_id: jobOrderId,
     });
+
+    const { data: employer } = await supabase
+      .from("employers")
+      .select("email")
+      .eq("id", result.employer_id)
+      .maybeSingle();
+
+    if (employer?.email) {
+      await sendEmail({
+        to: employer.email,
+        subject: legalizationTitle,
+        message: legalizationMessage,
+        ctaLabel: "Upload Documents",
+        ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Employer/job-orders/${jobOrderId}`,
+      });
+    }
   }
 
   return result;
