@@ -84,11 +84,6 @@ export default function VisaCard({ applicationId }: Props) {
     }
   }
 
-  async function submit(id: string) {
-    await submitVisa(id);
-    load();
-  }
-
   function openApproveDialog(id: string) {
     setApproveDialogVisaId(id);
     setVisaNumber("");
@@ -116,19 +111,6 @@ export default function VisaCard({ applicationId }: Props) {
     } finally {
       setApproving(false);
     }
-  }
-
-  async function issue(id: string) {
-    await issueVisa(id);
-    load();
-  }
-
-  async function reject(id: string) {
-    const remarks = prompt("Reason") ?? "";
-
-    await rejectVisa(id, remarks);
-
-    load();
   }
 
   return (
@@ -219,10 +201,6 @@ export default function VisaCard({ applicationId }: Props) {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => submit(visa.id)}>
-                    Submit
-                  </Button>
-
                   <Dialog
                     open={approveDialogVisaId === visa.id}
                     onOpenChange={(open) => {
@@ -233,17 +211,8 @@ export default function VisaCard({ applicationId }: Props) {
                       }
                     }}
                   >
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="secondary">
-                        <BadgeCheck className="mr-2 h-4 w-4" />
-                        Approve
-                      </Button>
-                    </DialogTrigger>
+                    <DialogTrigger asChild></DialogTrigger>
                     <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Approve Visa</DialogTitle>
-                      </DialogHeader>
-
                       <div className="space-y-4 py-2">
                         <div>
                           <Label htmlFor="visa_number">Visa Number</Label>
@@ -292,14 +261,6 @@ export default function VisaCard({ applicationId }: Props) {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-
-                  <Button size="sm" onClick={() => issue(visa.id)}>
-                    Issue
-                  </Button>
-
-                  <Button size="sm" variant="destructive" onClick={() => reject(visa.id)}>
-                    Reject
-                  </Button>
                 </div>
               </div>
             ))}

@@ -8,6 +8,7 @@ interface InterviewFilters {
   status?: string;
   employerId?: string;
   recruiterId?: string;
+  applicationId?: string;
   search?: string;
 }
 
@@ -48,6 +49,10 @@ export async function getInterviews(filters: InterviewFilters) {
       count: "exact",
     },
   );
+
+  if (filters.applicationId) {
+    query = query.eq("application_id", filters.applicationId);
+  }
 
   if (filters.status) {
     query = query.eq("status", filters.status);

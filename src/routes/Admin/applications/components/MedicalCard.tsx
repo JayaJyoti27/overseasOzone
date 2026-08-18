@@ -75,23 +75,6 @@ export default function MedicalCard({ applicationId }: Props) {
     }
   }
 
-  async function fit(id: string) {
-    await markMedicalFit(id);
-    load();
-  }
-
-  async function unfit(id: string) {
-    const remarks = prompt("Reason") ?? "";
-    await markMedicalUnfit(id, remarks);
-    load();
-  }
-
-  async function retest(id: string) {
-    const remarks = prompt("Retest remarks") ?? "";
-    await markMedicalRetest(id, remarks);
-    load();
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -178,23 +161,6 @@ export default function MedicalCard({ applicationId }: Props) {
                   </div>
 
                   <Badge>{medical.status}</Badge>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => fit(medical.id)}>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Fit
-                  </Button>
-
-                  <Button size="sm" variant="secondary" onClick={() => retest(medical.id)}>
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Retest
-                  </Button>
-
-                  <Button size="sm" variant="destructive" onClick={() => unfit(medical.id)}>
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Unfit
-                  </Button>
                 </div>
               </div>
             ))}

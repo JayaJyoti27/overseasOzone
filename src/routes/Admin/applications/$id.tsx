@@ -247,12 +247,6 @@ function ApplicationDetails() {
             </div>
           )}
         </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Recruitment Timeline</CardTitle>
-        </CardHeader>
 
         <CardContent>
           {timeline.length === 0 ? (
@@ -273,8 +267,6 @@ function ApplicationDetails() {
         </CardContent>
       </Card>
       <div className="grid gap-6 lg:grid-cols-2">
-        <InterviewCard applicationId={application.id} />
-        <DocumentsCard applicationId={application.id} />
         <MedicalCard applicationId={application.id} />
         <VisaCard applicationId={application.id} />
         <DeploymentCard applicationId={application.id} />
