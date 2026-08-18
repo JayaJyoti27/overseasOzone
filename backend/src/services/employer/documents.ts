@@ -46,17 +46,24 @@ export async function uploadEmployerDocument(
     file_url: string;
   },
 ) {
+  // Upsert on (employer_id, document_type) so a retried/double-submitted
+  // upload replaces the previous row for that document type instead of
+  // creating a duplicate. Requires a unique constraint on those two columns
+  // — see the accompanying migration.
   const { data, error } = await supabase
     .from("employer_documents")
-    .insert({
-      employer_id: employerId,
-      document_type: payload.document_type,
-      name: payload.file_name,
-      file_url: payload.file_url,
-      status: "pending",
-      uploaded_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
+    .upsert(
+      {
+        employer_id: employerId,
+        document_type: payload.document_type,
+        name: payload.file_name,
+        file_url: payload.file_url,
+        status: "pending",
+        uploaded_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "employer_id,document_type" },
+    )
     .select()
     .single();
 

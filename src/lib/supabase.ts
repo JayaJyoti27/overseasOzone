@@ -90,6 +90,24 @@ export async function sendCandidateLoginLink(email: string) {
 }
 
 /**
+ * Verifies the 6-digit code from the same email `sendCandidateLoginLink`
+ * sends. Supabase's magic-link email includes both the clickable link and
+ * a numeric token by default — this lets a candidate type the code instead
+ * of switching devices/apps to open the link. On success this creates a
+ * real session, same as clicking the link, so the existing
+ * `onAuthStateChange` -> `finishLogin()` flow in candidate.tsx picks it up
+ * automatically; callers don't need to do anything else here.
+ */
+export async function verifyCandidateOtp(email: string, token: string) {
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: "email",
+  });
+  if (error) throw new Error(error.message);
+}
+
+/**
  * Sends a magic sign-in link to the given email for employer signup/login.
  * Mirrors sendCandidateLoginLink — `shouldCreateUser: true` lets a brand-new
  * employer request access this way too; their account is created with

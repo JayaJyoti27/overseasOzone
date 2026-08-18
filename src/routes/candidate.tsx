@@ -58,9 +58,7 @@ function CandidateAuthPage() {
     } catch (err) {
       finishing.current = false;
       setStep("email");
-      setError(
-        err instanceof Error ? err.message : "Something went wrong finishing sign in.",
-      );
+      setError(err instanceof Error ? err.message : "Something went wrong finishing sign in.");
     }
   }
 
@@ -188,9 +186,7 @@ function CandidateAuthPage() {
               </div>
 
               {error && (
-                <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {error}
-                </p>
+                <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
               )}
 
               <button
@@ -208,14 +204,10 @@ function CandidateAuthPage() {
                 <MailCheck className="h-6 w-6 text-blue" />
               </div>
 
-              <p className="text-sm text-ink">
-                Didn't get it? Check spam, or resend below.
-              </p>
+              <p className="text-sm text-ink">Didn't get it? Check spam, or resend below.</p>
 
               {error && (
-                <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {error}
-                </p>
+                <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
               )}
 
               <button

@@ -1,6 +1,7 @@
 import { supabase } from "../../config/supabase";
 import { DatabaseError, NotFoundError } from "../../utils/AppError";
 import { getSignedDocumentUrl } from "../storage";
+import { sendEmail } from "../email";
 
 const EMPLOYER_DOCUMENTS_BUCKET = "employer-documents";
 
@@ -168,6 +169,34 @@ export async function approveEmployer(employerId: string, adminId: string) {
     .single();
 
   if (error) throw new DatabaseError("Unable to approve employer.", error);
+
+  const title = "Your company has been approved";
+  const message = `${data.company_name || "Your company"} and its documents have been reviewed and approved. You can now post job orders and search candidates.`;
+
+  const { error: notifyError } = await supabase.from("notifications").insert({
+    user_id: employerId,
+    user_type: "employer",
+    title,
+    message,
+    type: "employer_approved",
+    related_entity: "employer",
+    related_entity_id: employerId,
+    is_read: false,
+  });
+
+  if (notifyError) {
+    console.error(`[notifications] Failed to notify employer ${employerId} of approval:`, notifyError);
+  }
+
+  if (data.email) {
+    await sendEmail({
+      to: data.email,
+      subject: title,
+      message,
+      ctaLabel: "Go to Dashboard",
+      ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Employer/dashboard`,
+    });
+  }
 
   return data;
 }

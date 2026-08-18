@@ -162,6 +162,23 @@ export async function submitEmployerForReview(employerId: string) {
     throw new NotFoundError("Employer not found.");
   }
 
+  // Idempotency guard: if this employer already has an unread
+  // "employer_registration" notification out, a repeat submit (double-click,
+  // client retry, etc.) is a no-op instead of spamming every admin again.
+  const { data: existingNotification } = await supabase
+    .from("notifications")
+    .select("id")
+    .eq("related_entity", "employer")
+    .eq("related_entity_id", employerId)
+    .eq("type", "employer_registration")
+    .eq("is_read", false)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingNotification) {
+    return { notified: 0, alreadySubmitted: true };
+  }
+
   const { data: admins } = await supabase
     .from("profiles")
     .select("id, email")

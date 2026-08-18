@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, FormEvent } from "react";
+import { useState, useRef, FormEvent } from "react";
 import { Building2, Upload, Loader2, FileCheck } from "lucide-react";
 import { updateProfile, uploadEmployerDocument, submitForReview } from "@/lib/employer/api";
 
@@ -14,10 +14,16 @@ function EmployerRegisterPage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A ref, not just state — state updates aren't guaranteed to land before a
+  // second click/tap fires, which was letting fast double-clicks slip through
+  // and submit the form (and upload the document) twice.
+  const submittingRef = useRef(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (submittingRef.current) return;
 
     if (!companyName.trim()) {
       setError("Company name is required.");
@@ -28,6 +34,7 @@ function EmployerRegisterPage() {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       console.log("[EmployerRegister] step 1: updateProfile");
@@ -48,6 +55,9 @@ function EmployerRegisterPage() {
 
       const backendMessage = err?.response?.data?.message;
       setError(backendMessage || err?.message || "Something went wrong. Try again.");
+      // Only release the lock on failure — on success we're navigating away,
+      // so leaving it locked avoids a stray re-submit during the transition.
+      submittingRef.current = false;
     } finally {
       setSubmitting(false);
     }

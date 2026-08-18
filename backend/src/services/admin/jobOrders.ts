@@ -362,7 +362,7 @@ export async function requestJobOrderClarification(
   adminId: string,
   notes: string,
 ) {
-  return transitionJobOrderStatus(
+  const result = await transitionJobOrderStatus(
     jobOrderId,
     ["under_admin_review"],
     "clarification_required",
@@ -372,6 +372,47 @@ export async function requestJobOrderClarification(
       remarks: notes,
     },
   );
+
+  if (result.employer_id) {
+    const title = "Clarification requested on your job order";
+    const message = `Our team needs more information on "${result.title ?? "your job order"}" before proceeding: ${notes}`;
+
+    const { error: notifyError } = await supabase.from("notifications").insert({
+      user_id: result.employer_id,
+      user_type: "employer",
+      title,
+      message,
+      type: "job_order_clarification",
+      related_entity: "job_order",
+      related_entity_id: jobOrderId,
+      is_read: false,
+    });
+
+    if (notifyError) {
+      console.error(
+        `[notifications] Failed to notify employer ${result.employer_id} of job order clarification:`,
+        notifyError,
+      );
+    }
+
+    const { data: employer } = await supabase
+      .from("employers")
+      .select("email")
+      .eq("id", result.employer_id)
+      .maybeSingle();
+
+    if (employer?.email) {
+      await sendEmail({
+        to: employer.email,
+        subject: title,
+        message,
+        ctaLabel: "View Job Order",
+        ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Employer/job-orders/${jobOrderId}`,
+      });
+    }
+  }
+
+  return result;
 }
 
 /*
@@ -417,6 +458,8 @@ export async function startLegalization(jobOrderId: string, adminId: string) {
 
     await supabase.from("notifications").insert({
       user_id: result.employer_id,
+
+      user_type: "employer",
 
       title: legalizationTitle,
 

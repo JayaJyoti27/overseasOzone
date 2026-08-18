@@ -117,6 +117,7 @@ export async function recordStatusChange(
       if (messages.candidate && application.candidate_id) {
         rows.push({
           user_id: application.candidate_id,
+          user_type: "candidate",
           title: messages.title,
           message: fill(messages.candidate),
           type: "application",
@@ -128,6 +129,7 @@ export async function recordStatusChange(
       if (messages.employer && application.employer_id) {
         rows.push({
           user_id: application.employer_id,
+          user_type: "employer",
           title: messages.title,
           message: fill(messages.employer),
           type: "application",

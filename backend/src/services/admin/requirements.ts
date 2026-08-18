@@ -1,5 +1,6 @@
 import { supabase } from "../../config/supabase";
 import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
+import { sendEmail } from "../email";
 
 interface RequirementFilters {
   page?: number;
@@ -148,10 +149,41 @@ export async function requestClarification(requirementId: string, adminId: strin
       updated_at: new Date().toISOString(),
     })
     .eq("id", requirementId)
-    .select()
+    .select("*, employer:employers(email, company_name)")
     .single();
 
   if (error) throw new DatabaseError("Unable to request clarification.", error);
+
+  const title = "Clarification requested on your requirement";
+  const message = `Our team needs more information before proceeding: ${notes}`;
+
+  const { error: notifyError } = await supabase.from("notifications").insert({
+    user_id: data.employer_id,
+    user_type: "employer",
+    title,
+    message,
+    type: "requirement_clarification",
+    related_entity: "requirement",
+    related_entity_id: requirementId,
+    is_read: false,
+  });
+
+  if (notifyError) {
+    console.error(
+      `[notifications] Failed to notify employer ${data.employer_id} of requirement clarification:`,
+      notifyError,
+    );
+  }
+
+  if (data.employer?.email) {
+    await sendEmail({
+      to: data.employer.email,
+      subject: title,
+      message,
+      ctaLabel: "View Requirement",
+      ctaUrl: `${process.env.FRONTEND_URL ?? ""}/Employer/job-orders`,
+    });
+  }
 
   return data;
 }
