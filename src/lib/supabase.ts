@@ -73,6 +73,64 @@ export async function loginWithPassword(email: string, password: string): Promis
   return { ...profile, email: data.user.email ?? "" } as Profile;
 }
 
+const ROLE_LABEL: Record<UserRole, string> = {
+  admin: "admin",
+  employer: "employer",
+  candidate: "candidate",
+};
+
+/**
+ * Same as loginWithPassword, but for role-specific portals (the candidate
+ * and employer sign-in pages) — rejects a correctly-authenticated user if
+ * their account is actually the *other* role, instead of silently sending
+ * an employer into the candidate dashboard's route guard to bounce around.
+ * Signs the mismatched session out so the failed attempt doesn't linger.
+ */
+export async function loginWithPasswordAsRole(
+  email: string,
+  password: string,
+  expectedRole: UserRole,
+): Promise<Profile> {
+  const profile = await loginWithPassword(email, password);
+
+  if (profile.role !== expectedRole) {
+    await supabase.auth.signOut();
+    const label = ROLE_LABEL[profile.role];
+    const article = label === "admin" ? "an" : "a";
+    throw new Error(
+      `This email is registered as ${article} ${label} account. Please sign in from the ${label} login page instead.`,
+    );
+  }
+
+  return profile;
+}
+
+/**
+ * Creates a brand-new account with email + password. Returns whether a
+ * session came back immediately: if your Supabase project has "Confirm
+ * email" enabled, `session` will be null here and the caller should show a
+ * "check your email" step instead of proceeding straight to onboarding —
+ * the real session arrives later when they click the confirmation link and
+ * land back on `emailRedirectTo`, same as the existing magic-link flows.
+ */
+export async function signUpWithPassword(email: string, password: string, emailRedirectTo: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo },
+  });
+
+  if (error) throw toFriendlyAuthError(error);
+
+  return { hasSession: !!data.session };
+}
+
+/** Resends the signup confirmation email (only relevant if "Confirm email" is on). */
+export async function resendSignupConfirmation(email: string) {
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) throw toFriendlyAuthError(error);
+}
+
 /** Returns the current logged-in user's profile, or null if not logged in. */
 export async function getCurrentProfile(): Promise<Profile | null> {
   const {

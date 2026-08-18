@@ -1,9 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, FormEvent, useEffect, useRef } from "react";
-import { ShieldCheck, ArrowRight, Mail, ArrowLeft, MailCheck, Loader2 } from "lucide-react";
+import { ShieldCheck, ArrowRight, Mail, Lock, Loader2 } from "lucide-react";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/footer";
-import { sendEmployerLoginLink, getCurrentProfile, supabase } from "@/lib/supabase";
+import {
+  loginWithPasswordAsRole,
+  signUpWithPassword,
+  resendSignupConfirmation,
+  getCurrentProfile,
+  supabase,
+} from "@/lib/supabase";
 import { completeEmployerSignup } from "@/lib/employer/api";
 
 export const Route = createFileRoute("/employer")({
@@ -30,12 +36,19 @@ const DotGrid = ({ className = "" }: { className?: string }) => (
   <div className={`dot-grid ${className}`} aria-hidden />
 );
 
-type Step = "email" | "sent" | "finishing";
+// "signin" / "signup" are the two tabs on the form itself. "confirm" is the
+// holding screen shown after signup if the Supabase project has "Confirm
+// email" turned on. "finishing" covers the moment we're setting up their
+// employer record / bouncing them onward.
+type Mode = "signin" | "signup";
+type Step = Mode | "confirm" | "finishing";
 
 function EmployerAuthPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>("signin");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -43,11 +56,12 @@ function EmployerAuthPage() {
   const checkingProfile = useRef(false);
 
   /** Runs once a real Supabase session exists — either because the person was
-   * already logged in, or because they just clicked the link in their email
-   * and got redirected back here with a session attached. Existing employer
-   * profiles go straight to the dashboard (the /Employer layout route itself
-   * redirects to /Employer/pending-approval if they're not approved yet).
-   * Brand-new profiles are asked for their company details first. */
+   * already logged in, just signed up with instant confirmation, or just
+   * clicked the confirmation link in their email and landed back here.
+   * Existing employer profiles go straight to the dashboard (the /Employer
+   * layout route itself redirects to /Employer/register or
+   * /Employer/pending-approval as needed). Brand-new profiles get a bare
+   * profile + employer record created here. */
   async function finishLogin() {
     if (finishing.current || checkingProfile.current) return;
     checkingProfile.current = true;
@@ -56,8 +70,9 @@ function EmployerAuthPage() {
       const profile = await getCurrentProfile();
 
       if (profile && profile.role !== "employer") {
+        await supabase.auth.signOut();
         setError("This account is not registered as an employer.");
-        setStep("email");
+        setStep("signin");
         return;
       }
 
@@ -67,22 +82,19 @@ function EmployerAuthPage() {
         return;
       }
 
-      // No profile yet — first time this person has signed in. Create the
-      // bare profile + employer record now (no company details collected
-      // here anymore); the /Employer layout guard will see company_name is
-      // still empty and route them to /Employer/register to finish up.
       await completeEmployerSignup();
       finishing.current = true;
       navigate({ to: "/Employer/dashboard" });
     } catch (err) {
-      setStep("email");
+      setStep("signin");
       setError(err instanceof Error ? err.message : "Something went wrong signing you in.");
     } finally {
       checkingProfile.current = false;
     }
   }
 
-  // Already logged in (either from before, or just landed back from the email link).
+  // Already logged in (either from before, or just landed back from the
+  // email confirmation link after signup).
   useEffect(() => {
     getCurrentProfile().then((profile) => {
       if (profile?.role === "employer") finishLogin();
@@ -104,33 +116,74 @@ function EmployerAuthPage() {
     return () => clearTimeout(t);
   }, [resendCooldown]);
 
-  async function handleSendLink(e: FormEvent) {
+  async function handleSignIn(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      await sendEmployerLoginLink(email.trim());
-      setStep("sent");
+      await loginWithPasswordAsRole(email.trim(), password, "employer");
+      // onAuthStateChange picks up the SIGNED_IN event and calls finishLogin().
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't sign you in. Try again.");
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSignUp(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { hasSession } = await signUpWithPassword(
+        email.trim(),
+        password,
+        `${window.location.origin}/employer`,
+      );
+
+      if (hasSession) {
+        // Confirmations are off — we already have a session, finish right away.
+        finishLogin();
+        return;
+      }
+
+      setStep("confirm");
       setResendCooldown(30);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send the link. Try again.");
+      setError(err instanceof Error ? err.message : "Couldn't create your account. Try again.");
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function handleResend() {
+  async function handleResendConfirmation() {
     if (resendCooldown > 0 || submitting) return;
     setError(null);
     setSubmitting(true);
     try {
-      await sendEmployerLoginLink(email.trim());
+      await resendSignupConfirmation(email.trim());
       setResendCooldown(30);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't resend the link.");
+      setError(err instanceof Error ? err.message : "Couldn't resend the confirmation email.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function switchMode(mode: Mode) {
+    setStep(mode);
+    setError(null);
+    setPassword("");
+    setConfirmPassword("");
   }
 
   if (step === "finishing") {
@@ -165,67 +218,152 @@ function EmployerAuthPage() {
               <ShieldCheck className="h-3.5 w-3.5" /> Employer Portal
             </span>
             <h1 className="mt-4 font-display text-3xl font-bold leading-tight text-navy md:text-4xl">
-              {step === "email" && (
+              {step === "signin" && (
                 <>
-                  Sign in or <span className="text-blue">register</span>
+                  Sign in to your <span className="text-blue">account</span>
                 </>
               )}
-              {step === "sent" && (
+              {step === "signup" && (
+                <>
+                  Create your <span className="text-blue">account</span>
+                </>
+              )}
+              {step === "confirm" && (
                 <>
                   Check your <span className="text-blue">email</span>
                 </>
               )}
             </h1>
             <p className="mt-3 text-sm text-ink">
-              {step === "email" &&
-                "New here or returning — just enter your work email to get started."}
-              {step === "sent" &&
-                `We sent a sign-in link to ${email}. Open it on this device to continue.`}
+              {step === "signin" && "Enter your work email and password to continue."}
+              {step === "signup" && "New here? Set up your account with a work email and password."}
+              {step === "confirm" &&
+                `We sent a confirmation link to ${email}. Open it on this device to continue.`}
             </p>
           </div>
 
-          {step === "email" && (
-            <form
-              onSubmit={handleSendLink}
-              className="mt-8 rounded-[28px] border border-border bg-white p-8 shadow-[0_20px_60px_-30px_rgba(11,31,58,0.3)]"
-            >
-              <div className="mb-5">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
-                  Work Email
-                </label>
-                <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
-                  <Mail className="h-4 w-4 text-blue" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    autoFocus
-                    placeholder="you@company.com"
-                    className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
-                  />
-                </div>
+          {(step === "signin" || step === "signup") && (
+            <>
+              <div className="mt-8 flex rounded-full border border-border bg-white p-1 shadow-[0_10px_30px_-20px_rgba(11,31,58,0.3)]">
+                <button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${
+                    step === "signin" ? "bg-navy text-white" : "text-ink hover:text-navy"
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode("signup")}
+                  className={`flex-1 rounded-full py-2 text-sm font-semibold transition ${
+                    step === "signup" ? "bg-navy text-white" : "text-ink hover:text-navy"
+                  }`}
+                >
+                  Create Account
+                </button>
               </div>
 
-              {error && (
-                <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
-              )}
-
-              <button
-                type="submit"
-                disabled={submitting || !email.trim()}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue disabled:opacity-60"
+              <form
+                onSubmit={step === "signin" ? handleSignIn : handleSignUp}
+                className="mt-4 rounded-[28px] border border-border bg-white p-8 shadow-[0_20px_60px_-30px_rgba(11,31,58,0.3)]"
               >
-                {submitting ? "Sending link..." : "Send Sign-In Link"}
-                {!submitting && <ArrowRight className="h-4 w-4" />}
-              </button>
-            </form>
+                <div className="mb-4">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
+                    Work Email
+                  </label>
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
+                    <Mail className="h-4 w-4 text-blue" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoFocus
+                      placeholder="you@company.com"
+                      className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
+                    />
+                  </div>
+                </div>
+
+                <div className={step === "signup" ? "mb-4" : "mb-5"}>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
+                    Password
+                  </label>
+                  <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
+                    <Lock className="h-4 w-4 text-blue" />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      autoComplete={step === "signup" ? "new-password" : "current-password"}
+                      className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
+                    />
+                  </div>
+                </div>
+
+                {step === "signup" && (
+                  <div className="mb-5">
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-navy">
+                      Confirm Password
+                    </label>
+                    <div className="flex items-center gap-2 rounded-xl border border-border bg-blue-wash/40 px-4 py-3 focus-within:border-blue">
+                      <Lock className="h-4 w-4 text-blue" />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        className="w-full bg-transparent text-sm text-navy outline-none placeholder:text-ink/50"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {step === "signin" && (
+                  <div className="mb-2 flex justify-end">
+                    <a
+                      href="/ResetPassword"
+                      className="text-xs font-semibold text-blue hover:underline"
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
+                )}
+
+                {error && (
+                  <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={submitting || !email.trim() || !password}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue disabled:opacity-60"
+                >
+                  {submitting
+                    ? step === "signin"
+                      ? "Signing in..."
+                      : "Creating account..."
+                    : step === "signin"
+                      ? "Sign In"
+                      : "Create Account"}
+                  {!submitting && <ArrowRight className="h-4 w-4" />}
+                </button>
+              </form>
+            </>
           )}
 
-          {step === "sent" && (
+          {step === "confirm" && (
             <div className="mt-8 rounded-[28px] border border-border bg-white p-8 text-center shadow-[0_20px_60px_-30px_rgba(11,31,58,0.3)]">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-wash">
-                <MailCheck className="h-6 w-6 text-blue" />
+                <Mail className="h-6 w-6 text-blue" />
               </div>
 
               <p className="text-sm text-ink">Didn't get it? Check spam, or resend below.</p>
@@ -236,22 +374,19 @@ function EmployerAuthPage() {
 
               <button
                 type="button"
-                onClick={handleResend}
+                onClick={handleResendConfirmation}
                 disabled={resendCooldown > 0 || submitting}
                 className="mt-5 w-full rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue disabled:opacity-60"
               >
-                {resendCooldown > 0 ? `Resend link in ${resendCooldown}s` : "Resend Link"}
+                {resendCooldown > 0 ? `Resend email in ${resendCooldown}s` : "Resend Email"}
               </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setStep("email");
-                  setError(null);
-                }}
-                className="mt-4 flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-ink hover:text-navy"
+                onClick={() => switchMode("signup")}
+                className="mt-4 text-xs font-semibold text-ink hover:text-navy"
               >
-                <ArrowLeft className="h-3.5 w-3.5" /> Use a different email
+                Use a different email
               </button>
             </div>
           )}
