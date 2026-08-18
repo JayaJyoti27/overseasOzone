@@ -19,8 +19,7 @@ export const Route = createFileRoute("/Employer")({
     if (!profile || profile.role !== "employer") {
       // /register and /pending-approval are only ever reached right after
       // an authenticated action (email verification, form submit). Don't
-      // re-litigate "are you logged in" on these two pages — just let them
-      // load instead of bouncing to /Login.
+      // re-litigate "are you logged in" on th
       if (isRegisterPage || isPendingPage) {
         return { profile: null };
       }
