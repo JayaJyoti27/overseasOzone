@@ -8,6 +8,7 @@ interface VisaFilters {
   status?: string;
   employerId?: string;
   jobOrderId?: string;
+  applicationId?: string;
 }
 
 /*
@@ -38,6 +39,10 @@ export async function getVisas(filters: VisaFilters) {
       count: "exact",
     },
   );
+
+  if (filters.applicationId) {
+    query = query.eq("application_id", filters.applicationId);
+  }
 
   if (filters.status) {
     query = query.eq("status", filters.status);

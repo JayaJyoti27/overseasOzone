@@ -24,8 +24,7 @@ export function CandidateProfileCard({ candidate, application }: Props) {
       <CardContent className="grid grid-cols-2 gap-6">
         <Info label="Position" value={application?.job?.title} />
         <Info label="Nationality" value={candidate.nationality} />
-        <Info label="Age" value={formatAge(candidate.dob)} />
-        <Info label="Current Location" value={candidate.current_location} />
+
         <Info label="Experience" value={formatExperience(candidate.experience)} />
         <Info label="Education" value={formatEducation(candidate.education)} />
         <Info label="Skills" value={formatSkills(candidate.skills)} />

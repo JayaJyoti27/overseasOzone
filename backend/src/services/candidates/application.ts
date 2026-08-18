@@ -123,6 +123,11 @@ export async function applyForJob(candidateId: string, jobId: string) {
       employer_id: job.employer_id,
       job_order_id: job.job_order_id,
       status: "applied",
+      // "applied" is candidate-visible, but the employer/admin pipeline
+      // is driven off internal_status (see constants/applicationStatus.ts).
+      // Without this, new applications never match EMPLOYER_VISIBLE_STATUSES
+      // and are invisible to the employer even after being shortlisted.
+      internal_status: "application_received",
       applied_at: new Date().toISOString(),
     })
     .select()

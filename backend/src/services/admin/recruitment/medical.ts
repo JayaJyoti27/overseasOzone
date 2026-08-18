@@ -8,6 +8,7 @@ interface MedicalFilters {
   status?: string;
   employerId?: string;
   jobOrderId?: string;
+  applicationId?: string;
   search?: string;
 }
 
@@ -39,6 +40,10 @@ export async function getMedicals(filters: MedicalFilters) {
       count: "exact",
     },
   );
+
+  if (filters.applicationId) {
+    query = query.eq("application_id", filters.applicationId);
+  }
 
   if (filters.status) {
     query = query.eq("status", filters.status);

@@ -8,6 +8,7 @@ interface DeploymentFilters {
   status?: string;
   employerId?: string;
   jobOrderId?: string;
+  applicationId?: string;
 }
 
 /*
@@ -43,6 +44,10 @@ export async function getDeployments(filters: DeploymentFilters) {
       count: "exact",
     },
   );
+
+  if (filters.applicationId) {
+    query = query.eq("application_id", filters.applicationId);
+  }
 
   if (filters.status) {
     query = query.eq("status", filters.status);

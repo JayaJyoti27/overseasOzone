@@ -78,3 +78,24 @@ export const CANDIDATE_VISIBLE_STATUSES: ApplicationStatus[] = APPLICATION_STATU
 export function isCandidateVisibleStatus(status: string): status is ApplicationStatus {
   return (CANDIDATE_VISIBLE_STATUSES as string[]).includes(status);
 }
+
+/*
+|--------------------------------------------------------------------------
+| Employer Visibility
+|--------------------------------------------------------------------------
+| An application only shows up for the employer once it's past the
+| pre-review admin stages. "applied" (just submitted) and the two
+| INTERNAL_ONLY_STATUSES ("application_received", "cv_under_review") are
+| admin bookkeeping the employer should never see — everything from
+| "employer_shortlisted" onward (including rejected/withdrawn) is fair
+| game. Consumed by services/employer/candidate.ts.
+*/
+
+const EMPLOYER_HIDDEN_STATUSES: ApplicationStatus[] = [
+  "applied",
+  ...INTERNAL_ONLY_STATUSES,
+];
+
+export const EMPLOYER_VISIBLE_STATUSES: ApplicationStatus[] = APPLICATION_STATUSES.filter(
+  (status) => !(EMPLOYER_HIDDEN_STATUSES as string[]).includes(status),
+);
