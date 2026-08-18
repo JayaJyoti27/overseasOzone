@@ -358,7 +358,6 @@ export async function createDeployment(req: Request, res: Response) {
   const data = await RecruitmentService.createDeployment(
     String(req.params.applicationId),
     req.adminId!,
-    req.body,
   );
 
   res.json({
