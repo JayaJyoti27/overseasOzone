@@ -43,6 +43,7 @@ export async function getEmployerRequirementDetails(employerId: string, requirem
         country,
         vacancies,
         status,
+        remarks,
         created_at
       `,
       )

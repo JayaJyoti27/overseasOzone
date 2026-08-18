@@ -182,6 +182,15 @@ function JobOrderDetailsPage() {
               {statusLabel(convertedJobOrder.status)}
             </span>
           </div>
+
+          {convertedJobOrder.status === "clarification_required" && (
+            <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
+              <p className="text-sm font-semibold text-orange-800">Admin requested clarification</p>
+              <p className="mt-1 text-sm text-orange-700">
+                {convertedJobOrder.remarks || "Please review and update this job order."}
+              </p>
+            </div>
+          )}
         </Panel>
       )}
 

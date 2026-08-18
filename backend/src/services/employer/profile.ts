@@ -1,5 +1,5 @@
 import { supabase } from "../../config/supabase";
-import { DatabaseError, NotFoundError } from "../../utils/AppError";
+import { ConflictError, DatabaseError, NotFoundError } from "../../utils/AppError";
 import { sendEmail } from "../email";
 
 /*
@@ -107,6 +107,13 @@ export async function updateEmployerProfile(employerId: string, payload: UpdateE
     .single();
 
   if (error) {
+    // Postgres unique_violation on employers.email — surface a clear,
+    // actionable message instead of the generic 500 the raw pg error
+    // would otherwise produce.
+    if (error.code === "23505" && error.message?.includes("employers_email_key")) {
+      throw new ConflictError("This email is already registered to another employer account.");
+    }
+
     throw new DatabaseError("Unable to update company profile.", error);
   }
 

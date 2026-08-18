@@ -28,6 +28,30 @@ export function roleHomePath(role: UserRole) {
   return ROLE_HOME[role];
 }
 
+/**
+ * Supabase's magic-link send can fail two very different ways: a validation
+ * problem it can explain (bad email, rate limit) — worth showing as-is — or
+ * a raw upstream failure (its email-sending Auth Hook/SMTP provider erroring)
+ * which surfaces as a generic string like "Request failed with status code
+ * 500". That second kind is meaningless to a candidate/employer, so replace
+ * it with something actionable instead of showing the raw HTTP failure.
+ */
+function toFriendlyAuthError(error: { message?: string; status?: number }): Error {
+  const raw = error.message ?? "";
+  const looksLikeRawHttpFailure =
+    (error.status !== undefined && error.status >= 500) ||
+    /request failed with status code \d+/i.test(raw) ||
+    /^(unexpected_failure|internal_?server_?error)/i.test(raw);
+
+  if (looksLikeRawHttpFailure) {
+    return new Error(
+      "We couldn't send the sign-in link right now. Please try again in a moment — if it keeps happening, contact support.",
+    );
+  }
+
+  return new Error(raw || "Something went wrong. Please try again.");
+}
+
 /** Signs in with the given email + password, returns the user's profile/role. */
 export async function loginWithPassword(email: string, password: string): Promise<Profile> {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -86,7 +110,7 @@ export async function sendCandidateLoginLink(email: string) {
       emailRedirectTo: `${window.location.origin}/candidate`,
     },
   });
-  if (error) throw new Error(error.message);
+  if (error) throw toFriendlyAuthError(error);
 }
 
 /**
@@ -123,7 +147,7 @@ export async function sendEmployerLoginLink(email: string) {
       emailRedirectTo: `${window.location.origin}/employer`,
     },
   });
-  if (error) throw new Error(error.message);
+  if (error) throw toFriendlyAuthError(error);
 }
 
 /**

@@ -166,8 +166,8 @@ export async function updateProfile(req: Request, res: Response) {
     });
     return res.json({ success: true, data });
   } catch (err: any) {
-    console.error("updateProfile error:", err); // add this
-    return res.status(500).json({ success: false, message: err.message });
+    console.error("updateProfile error:", err);
+    return res.status(err.statusCode ?? 500).json({ success: false, message: err.message });
   }
 }
 
