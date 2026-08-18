@@ -368,7 +368,7 @@ export async function createDeployment(req: Request, res: Response) {
 }
 
 export async function addTicket(req: Request, res: Response) {
-  const data = await RecruitmentService.addTicket(String(req.params.id), req.body, req.adminId);
+  const data = await RecruitmentService.addTicket(String(req.params.id), req.body);
 
   res.json({
     success: true,
