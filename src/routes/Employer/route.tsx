@@ -24,7 +24,7 @@ export const Route = createFileRoute("/Employer")({
       if (isRegisterPage || isPendingPage) {
         return { profile: null };
       }
-      throw redirect({ to: "/Login" });
+      throw redirect({ to: "/employer" });
     }
 
     const { data: employer } = await supabase
