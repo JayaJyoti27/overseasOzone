@@ -173,7 +173,7 @@ function Hero() {
             <span className="text-blue">International Recruitment</span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-ink md:text-lg">
-            Ozone Overseas is a Government of India MEA-licensed recruitment partner delivering
+            new version Ozone Overseas is a Government of India MEA-licensed recruitment partner delivering
             end-to-end workforce solutions — sourcing, screening, documentation, visa and deployment
             — for verified employers across the GCC.
           </p>
