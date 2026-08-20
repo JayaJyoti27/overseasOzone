@@ -3,7 +3,7 @@
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
-    "VITE_API_URL": "https://ozoneeoverseass-backend.onrender.com/api",
+    "VITE_API_URL": "https://overseasozone.onrender.com/api",
     "VITE_SUPABASE_URL": "https://afobptwiobwbzvhzfbcl.supabase.co",
     "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmb2JwdHdpb2J3Ynp2aHpmYmNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0ODQ5NzQsImV4cCI6MjA5OTA2MDk3NH0.xP-vJFi2wFFFCc0fGiH6eqirjmQb9yXpY2R1xXuTY9g",
   },
